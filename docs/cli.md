@@ -56,6 +56,17 @@ Each capture is written as:
 
 so `Screenshot::make('editor')` produces `docs/assets/editor-light.png` and `docs/assets/editor-dark.png`. Names contain no timestamps, hashes, or package prefix, and each run overwrites the previous files. The form `{name}-{viewport}-{theme}.png` is reserved for a future feature that captures one screenshot at several viewports, so existing names will not change.
 
+### Using screenshots in documentation
+
+The awcodes documentation hub serves images from `docs/assets/`, so the default output path needs no configuration. Reference both theme variants from a page, scoped with the `#gh-light-mode-only` and `#gh-dark-mode-only` fragments, and the hub shows the one matching the reader's theme:
+
+```markdown
+![The brick picker](assets/brick-picker-light.png#gh-light-mode-only)
+![The brick picker](assets/brick-picker-dark.png#gh-dark-mode-only)
+```
+
+From a page in a subdirectory, such as `docs/usage/editor.md`, the path is `../assets/brick-picker-light.png`. The fragment convention comes from GitHub, which has since deprecated it, so a page viewed on GitHub may show both images.
+
 ### Atomic writes
 
 Each capture is written to a temporary file in the output directory and moved into place only once it succeeds. A failed capture never replaces or deletes the previous file, and the failure report says when an existing file was left over from an earlier run, so it is not mistaken for a fresh one.
