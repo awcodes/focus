@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Steps;
 
+use Awcodes\Focus\Runtime\Elements;
 use Playwright\Page\PageInterface;
 
 final readonly class Hover implements Step
@@ -14,7 +15,7 @@ final readonly class Hover implements Step
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        $page->locator($this->selector)->hover();
+        Elements::visible($page, $this->selector, $this->describe())->hover();
     }
 
     public function describe(): string

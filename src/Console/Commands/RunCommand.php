@@ -5,9 +5,16 @@ declare(strict_types=1);
 namespace Awcodes\Focus\Console\Commands;
 
 use Awcodes\Focus\Capture;
+use Awcodes\Focus\Console\ConsoleObserver;
 use Awcodes\Focus\Enums\Theme;
+use Awcodes\Focus\Exceptions\CaptureException;
 use Awcodes\Focus\Exceptions\FocusException;
 use Awcodes\Focus\Manifest\ManifestLoader;
+use Awcodes\Focus\Runtime\CaptureResult;
+use Awcodes\Focus\Runtime\Orphans;
+use Awcodes\Focus\Runtime\Runner;
+use Awcodes\Focus\Runtime\WorkbenchServer;
+use Awcodes\Focus\ScreenshotSuite;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -72,9 +79,108 @@ final class RunCommand extends Command
             return self::SUCCESS;
         }
 
-        $io->error('The browser runtime is not implemented yet. Use --list to inspect the planned captures.');
+        $filtered = $this->only($input) !== [] || $input->getOption('theme') !== null;
 
-        return self::FAILURE;
+        if ($input->getOption('prune') && $filtered) {
+            $io->error('--prune cannot be combined with --only or --theme: orphans can only be identified after an unfiltered run.');
+
+            return self::FAILURE;
+        }
+
+        $observer = new ConsoleObserver($output, $this->relative(...));
+
+        try {
+            $server = $this->server($input, $suite);
+        } catch (CaptureException $e) {
+            $io->error("{$e->reason->value}: {$e->getMessage()}");
+
+            return self::FAILURE;
+        }
+
+        $output->writeln(sprintf(
+            '<info>Focus</info> capturing %d screenshot(s) from %s%s',
+            count($captures),
+            $server->url,
+            $server->started() ? ' <fg=gray>(Workbench started by Focus)</>' : '',
+        ));
+
+        try {
+            $results = (new Runner($observer))->run($suite, $captures, $server->url, (bool) $input->getOption('headed'));
+        } catch (CaptureException $e) {
+            $io->error("{$e->reason->value}: {$e->getMessage()}");
+
+            return self::FAILURE;
+        } finally {
+            $server->stop();
+        }
+
+        $failed = array_filter($results, fn (CaptureResult $result): bool => ! $result->succeeded());
+
+        $output->writeln('');
+        $output->writeln(sprintf(
+            '%d captured, <%s>%d failed</>.',
+            count($results) - count($failed),
+            $failed === [] ? 'fg=gray' : 'fg=red',
+            count($failed),
+        ));
+
+        if (! $filtered && ! $this->handleOrphans($input, $io, $suite, $captures)) {
+            return self::FAILURE;
+        }
+
+        return $failed === [] ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function server(InputInterface $input, ScreenshotSuite $suite): WorkbenchServer
+    {
+        $baseUrl = $input->getOption('base-url') ?? $suite->getBaseUrl();
+
+        return $baseUrl === null
+            ? WorkbenchServer::start($this->workingDirectory)
+            : WorkbenchServer::connect((string) $baseUrl);
+    }
+
+    /**
+     * @param  list<Capture>  $captures
+     */
+    private function handleOrphans(InputInterface $input, SymfonyStyle $io, ScreenshotSuite $suite, array $captures): bool
+    {
+        $orphans = Orphans::find($suite->resolveOutputDirectory($this->workingDirectory), $captures);
+
+        if ($orphans === []) {
+            return true;
+        }
+
+        $io->newLine();
+        $io->writeln(sprintf('<comment>%d orphaned asset(s)</comment> match the Focus filename scheme but are not in the manifest:', count($orphans)));
+        $io->listing(array_map($this->relative(...), $orphans));
+
+        if (! $input->getOption('prune')) {
+            $io->writeln('<fg=gray>Run with --prune to delete them.</>');
+
+            return true;
+        }
+
+        if (! $input->getOption('force') && ! $io->confirm('Delete these files?', false)) {
+            $io->writeln('Kept orphaned assets.');
+
+            return true;
+        }
+
+        $ok = true;
+
+        foreach ($orphans as $orphan) {
+            if (! @unlink($orphan)) {
+                $io->error("Could not delete {$this->relative($orphan)}.");
+                $ok = false;
+            }
+        }
+
+        if ($ok) {
+            $io->writeln(sprintf('<info>Deleted</info> %d orphaned asset(s).', count($orphans)));
+        }
+
+        return $ok;
     }
 
     /**

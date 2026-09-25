@@ -31,4 +31,6 @@ final class Defaults
     public const FROZEN_TIME = '2026-01-01 09:00:00';
 
     public const MASK_COLOR = '#FF00FF';
+
+    public const TIMEOUT = 15_000;
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus;
 
+use Awcodes\Focus\Authentication\Authenticator;
+use Awcodes\Focus\Authentication\CallbackAuthenticator;
+use Awcodes\Focus\Authentication\FormLogin;
 use Awcodes\Focus\Concerns\HasCaptureSettings;
 use Awcodes\Focus\Enums\Theme;
 use Awcodes\Focus\Exceptions\FocusException;
@@ -25,10 +28,17 @@ class ScreenshotSuite
     /** @var list<string> */
     protected array $masks = [];
 
+    protected ?Authenticator $authenticator;
+
+    protected int $timeout = Defaults::TIMEOUT;
+
     /** @var list<Closure(PageInterface): mixed> */
     protected array $beforeEach = [];
 
-    final public function __construct() {}
+    final public function __construct()
+    {
+        $this->authenticator = new FormLogin;
+    }
 
     public static function make(): static
     {
@@ -72,6 +82,49 @@ class ScreenshotSuite
     }
 
     /**
+     * Sign in through the application's login form once, before any captures. Enabled by default with Workbench credentials.
+     */
+    public function login(string $email = FormLogin::EMAIL, string $password = FormLogin::PASSWORD, string $path = FormLogin::PATH): static
+    {
+        $this->authenticator = new FormLogin($email, $password, $path);
+
+        return $this;
+    }
+
+    public function withoutLogin(): static
+    {
+        $this->authenticator = null;
+
+        return $this;
+    }
+
+    /**
+     * Establish authenticated state with the Playwright page directly. Cookies and storage are reused by every capture.
+     *
+     * @param  (Closure(PageInterface, string): mixed)|Authenticator  $authenticator  a closure receives the page and the base URL
+     */
+    public function authenticateUsing(Closure | Authenticator $authenticator): static
+    {
+        $this->authenticator = $authenticator instanceof Closure ? new CallbackAuthenticator($authenticator) : $authenticator;
+
+        return $this;
+    }
+
+    /**
+     * The default timeout, in milliseconds, for navigation, interactions, and selectors.
+     */
+    public function timeout(int $milliseconds): static
+    {
+        if ($milliseconds < 1) {
+            throw new InvalidArgumentException("timeout() must be greater than zero, [{$milliseconds}] given.");
+        }
+
+        $this->timeout = $milliseconds;
+
+        return $this;
+    }
+
+    /**
      * Mask matching elements in every screenshot, in addition to each screenshot's own masks.
      */
     public function mask(string ...$selectors): static
@@ -109,6 +162,16 @@ class ScreenshotSuite
     public function getBaseUrl(): ?string
     {
         return $this->baseUrl;
+    }
+
+    public function getAuthenticator(): ?Authenticator
+    {
+        return $this->authenticator;
+    }
+
+    public function getTimeout(): int
+    {
+        return $this->timeout;
     }
 
     /**

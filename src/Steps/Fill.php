@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Steps;
 
+use Awcodes\Focus\Runtime\Elements;
 use Playwright\Page\PageInterface;
 
 final readonly class Fill implements Step
@@ -15,7 +16,7 @@ final readonly class Fill implements Step
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        $page->locator($this->selector)->fill($this->value);
+        Elements::visible($page, $this->selector, $this->describe())->fill($this->value);
     }
 
     public function describe(): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Steps;
 
+use Awcodes\Focus\Runtime\Elements;
 use Playwright\Page\PageInterface;
 
 final readonly class Press implements Step
@@ -21,7 +22,7 @@ final readonly class Press implements Step
             return;
         }
 
-        $page->locator($this->selector)->press($this->key);
+        Elements::visible($page, $this->selector, $this->describe())->press($this->key);
     }
 
     public function describe(): string

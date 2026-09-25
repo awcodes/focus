@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Steps;
 
+use Awcodes\Focus\Enums\FailureReason;
+use Awcodes\Focus\Exceptions\CaptureException;
 use Playwright\Page\PageInterface;
 
 final readonly class Visit implements Step
@@ -23,7 +25,12 @@ final readonly class Visit implements Step
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        $page->goto(self::resolve($this->url, $baseUrl));
+        $url = self::resolve($this->url, $baseUrl);
+        $response = $page->goto($url);
+
+        if ($response instanceof \Playwright\Network\ResponseInterface && $response->status() >= 400) {
+            throw new CaptureException(FailureReason::Navigation, "visit({$this->url}) returned HTTP {$response->status()}.", url: $url);
+        }
     }
 
     public function describe(): string

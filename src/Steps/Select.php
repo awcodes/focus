@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Steps;
 
+use Awcodes\Focus\Runtime\Elements;
 use Playwright\Page\PageInterface;
 
 final readonly class Select implements Step
@@ -18,7 +19,7 @@ final readonly class Select implements Step
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        $page->locator($this->selector)->selectOption($this->values);
+        Elements::visible($page, $this->selector, $this->describe())->selectOption($this->values);
     }
 
     public function describe(): string

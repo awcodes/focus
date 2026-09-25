@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Steps;
 
+use Awcodes\Focus\Runtime\Elements;
 use Playwright\Page\PageInterface;
 
 final readonly class ScrollIntoView implements Step
@@ -14,7 +15,7 @@ final readonly class ScrollIntoView implements Step
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        $page->locator($this->selector)->scrollIntoViewIfNeeded();
+        Elements::visible($page, $this->selector, $this->describe())->scrollIntoViewIfNeeded();
     }
 
     public function describe(): string
