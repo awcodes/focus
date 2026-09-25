@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Awcodes\Focus\Console\Application;
+
+foreach ([
+    __DIR__ . '/../../../autoload.php', // installed as vendor/awcodes/focus
+    __DIR__ . '/../vendor/autoload.php', // running from this repository
+] as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+
+        break;
+    }
+}
+
+if (! class_exists(Application::class)) {
+    fwrite(STDERR, 'Unable to locate the Composer autoloader. Run `composer install`.' . PHP_EOL);
+
+    exit(1);
+}
+
+exit((new Application)->run());

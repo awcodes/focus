@@ -1,0 +1,73 @@
+{
+    "name": "awcodes/focus",
+    "description": "Generate consistent documentation screenshots from Laravel Workbench applications using Playwright.",
+    "keywords": [
+        "awcodes",
+        "laravel",
+        "workbench",
+        "filament",
+        "playwright",
+        "screenshots",
+        "documentation"
+    ],
+    "homepage": "https://github.com/awcodes/focus",
+    "support": {
+        "issues": "https://github.com/awcodes/focus/issues",
+        "source": "https://github.com/awcodes/focus"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Adam Weston",
+            "email": "awcodes1@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "playwright-php/playwright": "^1.5",
+        "symfony/console": "^6.4|^7.0|^8.0",
+        "symfony/process": "^6.4|^7.0|^8.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "pestphp/pest": "^3.0|^4.0",
+        "phpstan/phpstan": "^2.0",
+        "rector/rector": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Awcodes\\Focus\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Awcodes\\Focus\\Tests\\": "tests/src"
+        }
+    },
+    "bin": [
+        "bin/focus"
+    ],
+    "scripts": {
+        "lint": "pint",
+        "refactor": "rector",
+        "test:lint": "pint --test",
+        "test:refactor": "rector --dry-run",
+        "test:types": "phpstan analyse",
+        "test:unit": "pest",
+        "test": [
+            "@test:refactor",
+            "@test:lint",
+            "@test:types",
+            "@test:unit"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

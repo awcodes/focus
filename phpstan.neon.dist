@@ -1,0 +1,9 @@
+parameters:
+    level: 6
+    reportUnmatchedIgnoredErrors: false
+    # Manifests are user input: public methods re-check types their PHPDoc already
+    # declares (e.g. `array<Theme>`), and those guards must not read as dead code.
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - src
+    tmpDir: build/phpstan
