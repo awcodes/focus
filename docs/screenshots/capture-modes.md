@@ -75,5 +75,5 @@ Screenshot::make('settings-page')
 | The selector matches several elements | The capture fails and reports the count. Focus never silently picks the first; add a more specific `data-focus` hook, or `:visible` when the other matches are hidden. |
 | The element exists but is hidden or has no size | The capture fails as **Selector hidden**, distinct from not found. |
 | The region is larger than the viewport | It is captured from the full document; the viewport is not resized. |
-| The region is larger than the document | It is clamped to the document and the run prints a warning naming the screenshot. |
+| The region is larger than the document | It is clamped to the document. The run warns only when the subject itself or the `minSize()` does not fit; padding that runs past the edge, common at mobile widths, is silently trimmed. |
 | The subject is near a document edge | The region shifts to stay in bounds rather than shrinking, so centring is best-effort. |

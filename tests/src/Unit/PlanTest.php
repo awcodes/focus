@@ -107,6 +107,16 @@ it('merges suite and screenshot masks', function (): void {
     expect($capture->masks)->toBe(['[data-focus-mask]', '.avatar']);
 });
 
+it('merges suite and screenshot hidden selectors', function (): void {
+    [$capture] = ScreenshotSuite::make()
+        ->hide('.fi-user-avatar')
+        ->themes([Theme::Light])
+        ->screenshots([Screenshot::make('a')->visit('/admin')->hide('.fi-sc-actions', '.fi-user-avatar')])
+        ->plan('/repo');
+
+    expect($capture->hidden)->toBe(['.fi-user-avatar', '.fi-sc-actions']);
+});
+
 it('narrows captures with --only and --theme', function (): void {
     $suite = ScreenshotSuite::make()->screenshots([
         Screenshot::make('editor')->visit('/admin'),

@@ -47,6 +47,9 @@ class Screenshot
     /** @var list<string> */
     protected array $masks = [];
 
+    /** @var list<string> */
+    protected array $hidden = [];
+
     /** @var list<Closure(PageInterface): mixed> */
     protected array $before = [];
 
@@ -205,6 +208,18 @@ class Screenshot
     }
 
     /**
+     * Hide matching elements at capture time without affecting layout, e.g. controls beside a focused subject.
+     */
+    public function hide(string ...$selectors): static
+    {
+        $this->ensureNotInFrame('hide()');
+
+        array_push($this->hidden, ...$selectors);
+
+        return $this;
+    }
+
+    /**
      * Run after the suite's `beforeEach()` and before any steps.
      *
      * @param  Closure(PageInterface): mixed  $callback
@@ -281,6 +296,14 @@ class Screenshot
     public function getFocusSelector(): ?string
     {
         return $this->focusSelector;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getHidden(): array
+    {
+        return $this->hidden;
     }
 
     /**

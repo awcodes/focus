@@ -180,6 +180,12 @@ final readonly class Runner
                 }
             }
 
+            $page->evaluate(Scripts::eagerImages());
+
+            if (! $this->settle($page)) {
+                $warnings[] = "Images were still loading {$this->seconds(self::READY_TIMEOUT)}s before capture; captured anyway. A remote image, such as an avatar, may be slow or unreachable; hide() or mask() it.";
+            }
+
             if (! $capture->keepInteractionState) {
                 $this->resetInteractionState($page, $capture);
             }
@@ -262,8 +268,12 @@ final readonly class Runner
             $options['clip'] = $framed['clip'];
 
             if ($framed['clamped']) {
-                $warnings[] = 'The framed region was larger than the document and was clamped to its bounds.';
+                $warnings[] = 'The subject or the minimum size is larger than the document, so the capture was clamped to the document bounds.';
             }
+        }
+
+        if ($capture->hidden !== []) {
+            $page->evaluate(Scripts::hide(), ['selectors' => $capture->hidden, 'id' => Scripts::HIDE_STYLE_ID]);
         }
 
         $masked = $capture->masks !== [] && $page->evaluate(Scripts::mask(), [
@@ -277,6 +287,10 @@ final readonly class Runner
         } finally {
             if ($masked) {
                 $page->evaluate(Scripts::unmask(), Scripts::MASK_TAG);
+            }
+
+            if ($capture->hidden !== []) {
+                $page->evaluate(Scripts::unhide(), Scripts::HIDE_STYLE_ID);
             }
         }
     }

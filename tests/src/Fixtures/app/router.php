@@ -147,6 +147,29 @@ switch ($path) {
 
         return;
 
+    case '/admin/lazy':
+        if (! $authenticated) {
+            header('Location: /admin/login');
+
+            return;
+        }
+
+        $layout(<<<'HTML'
+            <img id="top" loading="lazy" src="/img/slow?top" width="40" height="40" alt="">
+            <div class="tall"></div>
+            <img id="bottom" loading="lazy" src="/img/slow?bottom" width="40" height="40" alt="">
+            HTML);
+
+        return;
+
+    case '/img/slow':
+        usleep(800_000);
+        header('Content-Type: image/png');
+        // A 1x1 red PNG.
+        echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==');
+
+        return;
+
     case '/api/slow':
         usleep(400_000);
         echo 'Loaded late';

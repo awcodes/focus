@@ -359,3 +359,46 @@ it('clears focus inside iframes', function (): void {
 
     expect($focused)->toBe('');
 });
+
+it('loads lazy images before capture, in view and below the fold', function (): void {
+    $loaded = null;
+
+    [$results] = capture([
+        Screenshot::make('lazy')
+            ->visit('/admin/lazy')
+            ->beforeCapture(function (PageInterface $page) use (&$loaded): void {
+                $loaded = $page->evaluate('() => ["top", "bottom"].map((id) => document.getElementById(id).naturalWidth > 0)');
+            })
+            ->fullPage()
+            ->themes([Theme::Light]),
+    ]);
+
+    expect(errors($results))->toBe([null])
+        ->and($loaded)->toBe([true, true]);
+});
+
+it('hides elements at capture time without moving the layout', function (): void {
+    $shot = fn (string $name) => Screenshot::make($name)
+        ->visit('/admin/page')
+        ->focus('[data-focus="card"]')
+        ->padding(0)
+        ->scale(1)
+        ->themes([Theme::Light]);
+
+    $styleRemoved = null;
+
+    [$results, $root] = capture([
+        $shot('visible'),
+        $shot('hidden')
+            ->hide('[data-focus="card"]')
+            ->after(function (PageInterface $page) use (&$styleRemoved): void {
+                $styleRemoved = $page->evaluate('() => document.getElementById("focus-hide") === null');
+            }),
+    ]);
+
+    expect(errors($results))->toBe([null, null])
+        ->and(getimagesize("{$root}/docs/assets/hidden-light.png"))->toBe(getimagesize("{$root}/docs/assets/visible-light.png"))
+        ->and(pixel("{$root}/docs/assets/visible-light.png", 0, 50))->not->toBe([255, 255, 255])
+        ->and(pixel("{$root}/docs/assets/hidden-light.png", 0, 50))->toBe([255, 255, 255])
+        ->and($styleRemoved)->toBeTrue();
+});

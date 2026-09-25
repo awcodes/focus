@@ -56,6 +56,7 @@ Most settings can be set on the suite for every screenshot, or on an individual 
 | `timezone(string)` | Browser timezone | `UTC` |
 | `freezeTime(...)` | Fixed browser clock, or `false` for the real clock | `2026-01-01 09:00:00` |
 | `mask(...)` | Selectors to cover at capture time | none |
+| `hide(...)` | Selectors to hide at capture time, keeping layout | none |
 | `maskColor(string)` | Mask fill colour | `#FF00FF` |
 | `keepInteractionState()` | Keep hover and focus left by interactions | cleared before capture |
 
@@ -95,7 +96,7 @@ return ScreenshotSuite::make()
     ]);
 ```
 
-Masks are the exception: suite masks and screenshot masks are combined rather than replaced.
+Masks and hidden selectors are the exception: suite and screenshot values are combined rather than replaced.
 
 Suite-level `padding()` and `minSize()` apply only to `focus()` screenshots and are ignored for `viewport()` and `fullPage()` ones.
 

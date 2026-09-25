@@ -29,6 +29,16 @@ it('clamps a region larger than the document and flags it', function (): void {
     expect($framed)->toBe(['clip' => ['x' => 0, 'y' => 0, 'width' => 1440, 'height' => 300], 'clamped' => true]);
 });
 
+it('does not report padding that runs past the document edge', function (): void {
+    $framed = Framer::frame(['x' => 5, 'y' => 100, 'width' => 380, 'height' => 100], 32, null, 390, 2000);
+
+    expect($framed)->toBe(['clip' => ['x' => 0, 'y' => 68, 'width' => 390, 'height' => 164], 'clamped' => false]);
+});
+
+it('reports a subject wider than the document', function (): void {
+    expect(Framer::frame(['x' => 0, 'y' => 0, 'width' => 500, 'height' => 100], 0, null, 390, 2000)['clamped'])->toBeTrue();
+});
+
 it('rounds to whole pixels without growing past the requested size', function (): void {
     $framed = Framer::frame(['x' => 10.4, 'y' => 10.6, 'width' => 20.2, 'height' => 20.2], 0, null, 1000, 1000);
 

@@ -16,6 +16,8 @@ final class Scripts
 
     public const MASK_TAG = 'focus-mask';
 
+    public const HIDE_STYLE_ID = 'focus-hide';
+
     private const STABILIZE_CSS = <<<'CSS'
         *, *::before, *::after {
             animation-delay: 0s !important;
@@ -165,6 +167,56 @@ final class Scripts
                 return count;
             }
             JS;
+    }
+
+    /**
+     * Load lazy images now, in the page and every same-origin iframe. Readiness waits for eager images, so a lazy
+     * image inside the capture (a remote avatar, say) is loaded rather than captured half-way or not at all.
+     */
+    public static function eagerImages(): string
+    {
+        return <<<'JS'
+            () => {
+                const eager = (doc) => {
+                    for (const img of doc.querySelectorAll('img[loading="lazy"]')) {
+                        img.loading = 'eager';
+                    }
+
+                    for (const frame of doc.querySelectorAll('iframe')) {
+                        try {
+                            if (frame.contentDocument) eager(frame.contentDocument);
+                        } catch (e) {}
+                    }
+                };
+
+                eager(document);
+            }
+            JS;
+    }
+
+    /**
+     * Hide elements without affecting layout. One rule per selector, so an invalid selector only drops itself.
+     */
+    public static function hide(): string
+    {
+        return <<<'JS'
+            ({ selectors, id }) => {
+                const style = document.createElement('style');
+                style.id = id;
+                document.documentElement.appendChild(style);
+
+                for (const selector of selectors) {
+                    try {
+                        style.sheet.insertRule(`${selector} { visibility: hidden !important; }`, style.sheet.cssRules.length);
+                    } catch (e) {}
+                }
+            }
+            JS;
+    }
+
+    public static function unhide(): string
+    {
+        return '(id) => document.getElementById(id)?.remove()';
     }
 
     /**

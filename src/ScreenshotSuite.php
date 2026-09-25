@@ -28,6 +28,9 @@ class ScreenshotSuite
     /** @var list<string> */
     protected array $masks = [];
 
+    /** @var list<string> */
+    protected array $hidden = [];
+
     protected ?Authenticator $authenticator;
 
     protected int $timeout = Defaults::TIMEOUT;
@@ -148,6 +151,16 @@ class ScreenshotSuite
     }
 
     /**
+     * Hide matching elements in every screenshot, in addition to each screenshot's own `hide()` selectors.
+     */
+    public function hide(string ...$selectors): static
+    {
+        array_push($this->hidden, ...$selectors);
+
+        return $this;
+    }
+
+    /**
      * Run before every screenshot, after authentication and before the screenshot's own `before()`.
      *
      * @param  Closure(PageInterface): mixed  $callback
@@ -198,6 +211,14 @@ class ScreenshotSuite
     public function getMasks(): array
     {
         return $this->masks;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getHidden(): array
+    {
+        return $this->hidden;
     }
 
     /**

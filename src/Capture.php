@@ -18,6 +18,7 @@ final readonly class Capture
 {
     /**
      * @param  list<string>  $masks
+     * @param  list<string>  $hidden
      */
     public function __construct(
         public Screenshot $screenshot,
@@ -32,6 +33,7 @@ final readonly class Capture
         public string $timezone,
         public ?DateTimeImmutable $frozenTime,
         public array $masks,
+        public array $hidden,
         public string $maskColor,
         public bool $keepInteractionState,
         public string $path,
@@ -57,6 +59,7 @@ final readonly class Capture
                 $timezone,
             ),
             masks: array_values(array_unique([...$suite->getMasks(), ...$screenshot->getMasks()])),
+            hidden: array_values(array_unique([...$suite->getHidden(), ...$screenshot->getHidden()])),
             maskColor: $screenshot->getMaskColor() ?? $suite->getMaskColor() ?? Defaults::MASK_COLOR,
             keepInteractionState: $screenshot->getKeepInteractionState() ?? $suite->getKeepInteractionState() ?? Defaults::KEEP_INTERACTION_STATE,
             path: $outputDirectory . DIRECTORY_SEPARATOR . self::filename($screenshot->getName(), $theme),

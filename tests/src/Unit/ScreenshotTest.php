@@ -87,6 +87,7 @@ it('rejects top-level-only methods inside within()', function (callable $call, s
 })->with([
     'visit' => [fn (Screenshot $s) => $s->visit('/x'), 'visit()'],
     'mask' => [fn (Screenshot $s) => $s->mask('.x'), 'mask()'],
+    'hide' => [fn (Screenshot $s) => $s->hide('.x'), 'hide()'],
     'nested within' => [fn (Screenshot $s) => $s->within('iframe', fn () => null), 'within()'],
 ]);
 

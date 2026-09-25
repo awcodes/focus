@@ -81,11 +81,13 @@ A finished navigation does not mean a Filament page is ready to photograph. Afte
 
 - the document has finished loading;
 - web fonts have loaded;
-- images that are not lazy-loaded have loaded;
+- images that are not lazy-loaded have loaded (lazy images are loaded too, just before capture; see below);
 - Alpine has initialised, when the page uses it;
 - no `fetch` or `XMLHttpRequest` requests are in flight, which covers Livewire updates;
 - the DOM has stopped changing for several animation frames;
 - all of the above also hold inside same-origin iframes.
+
+Just before capture, Focus switches lazy-loaded images (`loading="lazy"`) to load immediately and waits for them. Images outside the viewport, in a focus region below the fold or on a full page, are captured loaded rather than blank. Remote images, such as Filament's default avatar from `ui-avatars.com`, are loaded too, so they depend on the network; `hide()` them when that matters.
 
 None of this is Filament-specific, so it works for any Laravel application. If a page is still changing after ten seconds, for example because of polling, Focus prints a warning and captures anyway. Add a `waitFor()` or `ready()` step if the result is incomplete.
 
@@ -115,6 +117,18 @@ Timestamps, avatars, counters, and other content your fixtures cannot fully cont
 ```
 
 `mask()` accepts one or more selectors and works at suite and screenshot level; the two sets are combined. The default colour is `#FF00FF`. Masks are removed again immediately after the capture. Masks cover elements in the top-level document only, not inside iframes.
+
+## Hiding elements
+
+Sometimes the problem is not changing content but neighbouring UI: form buttons just below a focused editor, or a remote avatar in the top bar. Hide it at capture time:
+
+```php
+->hide('.fi-user-avatar')
+```
+
+Hidden elements keep their space, because Focus applies `visibility: hidden` rather than removing them, so the layout and the framing do not move. `hide()` accepts one or more selectors and works at suite and screenshot level; the two sets are combined. The styles are removed again right after the capture. Like masks, `hide()` applies to the top-level document only.
+
+Use `mask()` when the reader should see that something is there, such as a timestamp, and `hide()` when it is simply in the way.
 
 ## Lifecycle callbacks
 

@@ -12,6 +12,9 @@ use Awcodes\Focus\Contracts\HasDimensions;
 final class Framer
 {
     /**
+     * `clamped` is true when the subject itself or the requested minimum size does not fit in the document.
+     * Padding running past a document edge is expected, especially at narrow viewports, and is not reported.
+     *
      * @param  array{x: float, y: float, width: float, height: float}  $subject
      * @return array{clip: array{x: int, y: int, width: int, height: int}, clamped: bool}
      */
@@ -35,6 +38,7 @@ final class Framer
     private static function axis(float $start, float $length, int $padding, int $minimum, float $documentLength): array
     {
         $documentLength = (int) floor($documentLength);
+        $overflows = ceil($length) > $documentLength || $minimum > $documentLength;
 
         $start -= $padding;
         $length += $padding * 2;
@@ -49,11 +53,11 @@ final class Framer
         $start = (int) round($start);
 
         if ($length > $documentLength) {
-            return [0, max(1, $documentLength), true];
+            return [0, max(1, $documentLength), $overflows];
         }
 
         $start = max(0, min($start, $documentLength - $length));
 
-        return [$start, $length, false];
+        return [$start, $length, $overflows];
     }
 }
