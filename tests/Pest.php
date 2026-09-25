@@ -22,6 +22,33 @@ function browserAvailable(): bool
 }
 
 /**
+ * A directory the fixture server reads and writes shared state in.
+ */
+function fixtureState(): string
+{
+    static $path = null;
+
+    return $path ??= tempDirectory();
+}
+
+function fixtureLogins(): int
+{
+    $path = fixtureState() . '/logins';
+
+    return is_file($path) ? (int) file_get_contents($path) : 0;
+}
+
+/**
+ * Invalidate every session the fixture server has issued.
+ */
+function invalidateFixtureSessions(): void
+{
+    $path = fixtureState() . '/generation';
+
+    file_put_contents($path, (is_file($path) ? (int) file_get_contents($path) : 0) + 1);
+}
+
+/**
  * Serve the fixture application with PHP's built-in server and return its base URL.
  */
 function fixtureServer(): string
@@ -40,6 +67,7 @@ function fixtureServer(): string
     $process = new Symfony\Component\Process\Process(
         [PHP_BINARY, '-S', "127.0.0.1:{$port}", __DIR__ . '/src/Fixtures/app/router.php'],
         __DIR__ . '/src/Fixtures/app',
+        ['FOCUS_FIXTURE_STATE' => fixtureState()],
     );
     $process->setTimeout(10);
     $process->start();

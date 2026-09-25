@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Awcodes\Focus\Authentication\FormLogin;
+use Awcodes\Focus\Authentication\SessionCache;
 use Awcodes\Focus\Enums\FailureReason;
 use Awcodes\Focus\Enums\Theme;
 use Awcodes\Focus\Exceptions\CaptureException;
@@ -21,7 +23,7 @@ beforeEach(function (): void {
  * @param  list<Screenshot>  $screenshots
  * @return array{list<CaptureResult>, string}
  */
-function capture(array $screenshots, ?Closure $configure = null): array
+function capture(array $screenshots, ?Closure $configure = null, ?SessionCache $sessions = null): array
 {
     $root = tempDirectory();
     $suite = ScreenshotSuite::make()->timeout(5_000)->screenshots($screenshots);
@@ -30,7 +32,7 @@ function capture(array $screenshots, ?Closure $configure = null): array
         $configure($suite);
     }
 
-    return [(new Runner)->run($suite, $suite->plan($root), fixtureServer()), $root];
+    return [(new Runner(sessions: $sessions))->run($suite, $suite->plan($root), fixtureServer()), $root];
 }
 
 function errors(array $results): array
@@ -181,9 +183,70 @@ it('reports distinct, actionable failures', function (): void {
 it('fails the run when authentication fails', function (): void {
     capture(
         [Screenshot::make('a')->visit('/admin/page')],
-        fn (ScreenshotSuite $suite) => $suite->login(password: 'wrong'),
+        fn (ScreenshotSuite $suite) => $suite->authenticateUsing(new FormLogin(password: 'wrong', timeout: 1_000)),
     );
 })->throws(CaptureException::class, 'did not leave the login page');
+
+it('explains a rate-limited login', function (): void {
+    capture(
+        [Screenshot::make('a')->visit('/admin/page')],
+        fn (ScreenshotSuite $suite) => $suite->authenticateUsing(new FormLogin(password: 'throttle', timeout: 1_000)),
+    );
+})->throws(CaptureException::class, 'rate-limiting sign-in attempts');
+
+it('reuses the previous run\'s session instead of signing in again', function (): void {
+    $sessions = SessionCache::for(tempDirectory(), new FormLogin, tempDirectory());
+    $screenshot = fn () => Screenshot::make('a')->visit('/admin/page')->themes([Theme::Light]);
+
+    $before = fixtureLogins();
+    [$first] = capture([$screenshot()], sessions: $sessions);
+    [$second] = capture([$screenshot()], sessions: $sessions);
+
+    expect(errors($first))->toBe([null])
+        ->and(errors($second))->toBe([null])
+        ->and(fixtureLogins() - $before)->toBe(1)
+        ->and($sessions->load())->not->toBeNull();
+});
+
+it('signs in again when the saved session is no longer valid', function (): void {
+    $sessions = SessionCache::for(tempDirectory(), new FormLogin, tempDirectory());
+    $screenshot = fn () => Screenshot::make('a')->visit('/admin/page')->themes([Theme::Light]);
+
+    capture([$screenshot()], sessions: $sessions);
+    invalidateFixtureSessions();
+
+    $before = fixtureLogins();
+    [$results] = capture([$screenshot()], sessions: $sessions);
+
+    expect(errors($results))->toBe([null])
+        ->and(fixtureLogins() - $before)->toBe(1);
+});
+
+it('does not reuse sessions for custom authentication', function (): void {
+    $sessions = SessionCache::for(tempDirectory(), new FormLogin, tempDirectory());
+
+    [$results] = capture(
+        [Screenshot::make('public')->visit('/public')->themes([Theme::Light])],
+        fn (ScreenshotSuite $suite) => $suite->authenticateUsing(fn (PageInterface $page, string $baseUrl) => $page->goto("{$baseUrl}/public")),
+        $sessions,
+    );
+
+    expect(errors($results))->toBe([null])
+        ->and(file_exists($sessions->path))->toBeFalse();
+});
+
+it('forgets a saved session when signing in fails', function (): void {
+    $sessions = SessionCache::for(tempDirectory(), new FormLogin, tempDirectory());
+    $sessions->save(['cookies' => [], 'origins' => []]);
+
+    expect(fn () => capture(
+        [Screenshot::make('a')->visit('/admin/page')],
+        fn (ScreenshotSuite $suite) => $suite->authenticateUsing(new FormLogin(password: 'wrong', timeout: 1_000)),
+        $sessions,
+    ))->toThrow(CaptureException::class);
+
+    expect(file_exists($sessions->path))->toBeFalse();
+});
 
 it('skips authentication when disabled', function (): void {
     [$results] = capture(

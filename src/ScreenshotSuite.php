@@ -32,6 +32,8 @@ class ScreenshotSuite
 
     protected int $timeout = Defaults::TIMEOUT;
 
+    protected bool $reuseSession = true;
+
     /** @var list<Closure(PageInterface): mixed> */
     protected array $beforeEach = [];
 
@@ -87,6 +89,17 @@ class ScreenshotSuite
     public function login(string $email = FormLogin::EMAIL, string $password = FormLogin::PASSWORD, string $path = FormLogin::PATH): static
     {
         $this->authenticator = new FormLogin($email, $password, $path);
+
+        return $this;
+    }
+
+    /**
+     * Reuse the signed-in session from the previous run instead of signing in every time. Applies to `login()` only;
+     * a session that is no longer valid is detected and replaced with a normal sign-in.
+     */
+    public function reuseSession(bool $condition = true): static
+    {
+        $this->reuseSession = $condition;
 
         return $this;
     }
@@ -167,6 +180,11 @@ class ScreenshotSuite
     public function getAuthenticator(): ?Authenticator
     {
         return $this->authenticator;
+    }
+
+    public function getReuseSession(): bool
+    {
+        return $this->reuseSession;
     }
 
     public function getTimeout(): int

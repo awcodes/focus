@@ -24,6 +24,7 @@ Running `vendor/bin/focus` with no command generates every screenshot in the man
 | `--prune` | Delete orphaned assets after an unfiltered run. |
 | `--force`, `-f` | Prune without asking for confirmation. |
 | `--list` | Show the planned captures without opening a browser. |
+| `--fresh-login` | Sign in again instead of reusing the previous run's session. |
 | `-v` | Also print each capture as it starts. |
 
 ## Filtering

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Runtime;
 
+use Awcodes\Focus\Authentication\FormLogin;
+use Awcodes\Focus\Authentication\SessionCache;
 use Awcodes\Focus\Capture;
 use Awcodes\Focus\Enums\CaptureMode;
 use Awcodes\Focus\Enums\FailureReason;
@@ -40,6 +42,7 @@ final readonly class Runner
 
     public function __construct(
         private ?RunObserver $observer = null,
+        private ?SessionCache $sessions = null,
     ) {}
 
     /**
@@ -103,7 +106,14 @@ final readonly class Runner
             return null;
         }
 
-        $context = $browser->newContext(['viewport' => self::AUTH_VIEWPORT]);
+        // Only form logins reuse a session: FormLogin checks whether the app still considers it signed in
+        // before touching the form, so a stale session costs nothing. A custom callback may not.
+        $sessions = $authenticator instanceof FormLogin ? $this->sessions : null;
+
+        $context = $browser->newContext(array_filter([
+            'viewport' => self::AUTH_VIEWPORT,
+            'storageState' => $sessions?->load(),
+        ]));
 
         try {
             $this->configureTimeouts($context, $suite->getTimeout());
@@ -112,10 +122,17 @@ final readonly class Runner
             $authenticator->authenticate($page, $baseUrl);
             $this->settle($page);
 
-            return $context->storageState();
+            $state = $context->storageState();
+            $sessions?->save($state);
+
+            return $state;
         } catch (CaptureException $e) {
+            $sessions?->forget();
+
             throw $e;
         } catch (Throwable $e) {
+            $sessions?->forget();
+
             throw new CaptureException(FailureReason::Authentication, $e->getMessage(), url: $baseUrl, previous: $e);
         } finally {
             $context->close();

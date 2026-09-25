@@ -27,6 +27,7 @@ final readonly class FormLogin implements Authenticator
         public string $email = self::EMAIL,
         public string $password = self::PASSWORD,
         public string $path = self::PATH,
+        public int $timeout = 15_000,
     ) {}
 
     public function authenticate(PageInterface $page, string $baseUrl): void
@@ -57,11 +58,20 @@ final readonly class FormLogin implements Authenticator
             $page->waitForFunction(
                 '(path) => window.location.pathname.replace(/\/$/, "") !== path.replace(/\/$/, "")',
                 $path,
-                ['timeout' => 15_000],
+                ['timeout' => $this->timeout],
             );
         } catch (PlaywrightExceptionInterface $e) {
             if (! Timeouts::is($e)) {
                 throw $e;
+            }
+
+            if ($this->throttled($page)) {
+                throw new CaptureException(
+                    FailureReason::Authentication,
+                    'The application is rate-limiting sign-in attempts. Wait a minute and run Focus again.',
+                    url: $url,
+                    previous: $e,
+                );
             }
 
             throw new CaptureException(
@@ -89,5 +99,17 @@ final readonly class FormLogin implements Authenticator
         }
 
         return $locator;
+    }
+
+    /**
+     * Filament (and Laravel's own throttling) reports too many attempts on the login page itself.
+     */
+    private function throttled(PageInterface $page): bool
+    {
+        try {
+            return preg_match('/too many (login )?attempts/i', $page->locator('body')->innerText()) === 1;
+        } catch (PlaywrightExceptionInterface) {
+            return false;
+        }
     }
 }

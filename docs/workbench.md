@@ -74,6 +74,26 @@ use Playwright\Page\PageInterface;
 
 If authentication fails, the run stops before any capture with an **Authentication failed** error.
 
+### Session reuse
+
+Signing in on every run is slow, and Filament allows only five login attempts a minute, so quick repeated runs would be locked out. With `login()`, the default, Focus saves the signed-in session after each run and starts the next run with it. It still opens the login page first: if the application redirects away because the session is valid, the form is skipped. If the session has expired, or a rebuilt Workbench has invalidated it, Focus signs in normally and saves the new session.
+
+Sessions are stored in the system temp directory, readable only by you, keyed by project, login path, and email. They never enter the repository.
+
+Session reuse only applies to form logins. `withoutLogin()` has no session, which suits packages whose Workbench has no panel. `authenticateUsing()` callbacks always run in full, because Focus cannot know whether a custom flow tolerates starting signed in.
+
+To sign in again for one run:
+
+```bash
+vendor/bin/focus --fresh-login
+```
+
+To turn reuse off for a suite:
+
+```php
+->reuseSession(false)
+```
+
 ## Stable selectors
 
 Prefer dedicated automation hooks over Filament's internal `.fi-*` classes or positional selectors, which change between Filament versions:

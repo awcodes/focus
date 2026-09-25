@@ -68,6 +68,7 @@ These settings are suite-level only:
 | `login(...)` | Sign in through a login form | Workbench development account |
 | `withoutLogin()` | Skip authentication | — |
 | `authenticateUsing(...)` | Custom authentication | — |
+| `reuseSession(bool)` | Reuse the previous run's signed-in session with `login()` | `true` |
 | `timeout(int)` | Timeout in milliseconds for interactions and selectors | `15000` |
 | `beforeEach(Closure)` | Callback before every screenshot | — |
 

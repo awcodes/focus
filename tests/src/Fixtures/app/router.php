@@ -7,7 +7,12 @@ declare(strict_types=1);
  */
 
 $path = rtrim((string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
-$authenticated = ($_COOKIE['session'] ?? null) === 'ok';
+
+// Tests share state with the server through files: a login counter, and a session generation that a test can
+// bump to invalidate every existing session, the way rebuilding a Workbench does.
+$state = getenv('FOCUS_FIXTURE_STATE') ?: sys_get_temp_dir();
+$generation = (int) @file_get_contents("{$state}/generation");
+$authenticated = ($_COOKIE['session'] ?? null) === "ok-{$generation}";
 
 $layout = static function (string $body): void {
     echo <<<HTML
@@ -39,9 +44,17 @@ $layout = static function (string $body): void {
 switch ($path) {
     case '/admin/login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            file_put_contents("{$state}/logins", ((int) @file_get_contents("{$state}/logins")) + 1);
+
             if (($_POST['email'] ?? '') === 'test@example.com' && ($_POST['password'] ?? '') === 'password') {
-                setcookie('session', 'ok', ['path' => '/']);
+                setcookie('session', "ok-{$generation}", ['path' => '/']);
                 header('Location: /admin');
+
+                return;
+            }
+
+            if (($_POST['password'] ?? '') === 'throttle') {
+                header('Location: /admin/login?throttled=1');
 
                 return;
             }
@@ -51,7 +64,16 @@ switch ($path) {
             return;
         }
 
-        $layout(<<<'HTML'
+        if ($authenticated) {
+            header('Location: /admin');
+
+            return;
+        }
+
+        $throttled = isset($_GET['throttled']) ? '<p>Too many login attempts. Please try again in 60 seconds.</p>' : '';
+
+        $layout(<<<HTML
+            {$throttled}
             <form method="post" action="/admin/login">
                 <input type="email" name="email" value="test@example.com">
                 <input type="password" name="password" value="">

@@ -21,6 +21,7 @@ The run stops before any capture.
 
 - **"The login page returned HTTP 404"**: the application has no login at the configured path. Use `->login(path: '/your/login')`, or `->withoutLogin()` for public pages.
 - **"Signing in as … did not leave the login page"**: the credentials were rejected. The Workbench is usually not seeded with the development account, often because a Composer command reset it; run `composer build`. For other credentials, configure `->login(...)`.
+- **"The application is rate-limiting sign-in attempts"**: too many sign-ins in a short time. Wait a minute. Session reuse normally prevents this; check the suite does not set `->reuseSession(false)`.
 - **"The login page … has no … field"**: the form does not have a standard email field, password field, or submit button. Use `->authenticateUsing(...)` to sign in yourself.
 
 ## Navigation failed

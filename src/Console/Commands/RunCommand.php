@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Console\Commands;
 
+use Awcodes\Focus\Authentication\FormLogin;
+use Awcodes\Focus\Authentication\SessionCache;
 use Awcodes\Focus\Capture;
 use Awcodes\Focus\Console\ConsoleObserver;
 use Awcodes\Focus\Enums\Theme;
@@ -41,7 +43,8 @@ final class RunCommand extends Command
             ->addOption('base-url', null, InputOption::VALUE_REQUIRED, 'Connect to a running application instead of starting Workbench')
             ->addOption('prune', null, InputOption::VALUE_NONE, 'Delete orphaned assets after an unfiltered run')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Prune without asking for confirmation')
-            ->addOption('list', null, InputOption::VALUE_NONE, 'List the planned captures without opening a browser');
+            ->addOption('list', null, InputOption::VALUE_NONE, 'List the planned captures without opening a browser')
+            ->addOption('fresh-login', null, InputOption::VALUE_NONE, 'Sign in again instead of reusing the previous run\'s session');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -105,7 +108,7 @@ final class RunCommand extends Command
         ));
 
         try {
-            $results = (new Runner($observer))->run($suite, $captures, $server->url, (bool) $input->getOption('headed'));
+            $results = (new Runner($observer, $this->sessions($input, $suite)))->run($suite, $captures, $server->url, (bool) $input->getOption('headed'));
         } catch (CaptureException $e) {
             $io->error("{$e->reason->value}: {$e->getMessage()}");
 
@@ -153,6 +156,23 @@ final class RunCommand extends Command
                 $output->writeln("    <comment>!</comment> {$name}: every theme produced an identical image, so the page may not support dark mode. Consider ->themes([Theme::Light]).");
             }
         }
+    }
+
+    private function sessions(InputInterface $input, ScreenshotSuite $suite): ?SessionCache
+    {
+        $login = $suite->getAuthenticator();
+
+        if (! $login instanceof FormLogin || ! $suite->getReuseSession()) {
+            return null;
+        }
+
+        $sessions = SessionCache::for($this->workingDirectory, $login);
+
+        if ($input->getOption('fresh-login')) {
+            $sessions->forget();
+        }
+
+        return $sessions;
     }
 
     private function server(InputInterface $input, ScreenshotSuite $suite): WorkbenchServer
