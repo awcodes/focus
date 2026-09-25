@@ -1,0 +1,19 @@
+version: 1
+
+title: Focus
+
+navigation:
+  - index
+  - installation
+  - configuration
+
+  - label: Screenshots
+    children:
+      - screenshots/capture-modes
+      - screenshots/dimensions
+      - screenshots/interactions
+      - screenshots/themes-and-stability
+
+  - workbench
+  - cli
+  - troubleshooting
