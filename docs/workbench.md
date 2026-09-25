@@ -17,6 +17,8 @@ composer focus
 
 Focus does not run `composer build`. The Workbench must already be built, which `composer serve` or `composer build` does. Rebuild after pulling plugin changes; otherwise screenshots show stale published assets or old fixture data.
 
+Composer operations can also reset the Workbench. In the awcodes Workbench setup, `post-autoload-dump` runs `testbench package:purge-skeleton`, so `composer install`, `composer require`, or `composer dump-autoload` delete the Workbench database. Run `composer build` again before generating screenshots.
+
 To use a server that is already running, for example `composer serve` in another terminal, pass a base URL:
 
 ```bash

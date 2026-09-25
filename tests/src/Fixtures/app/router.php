@@ -26,6 +26,9 @@ $layout = static function (string $body): void {
                 .tall { height: 3000px; }
                 .modal { display: none; }
                 .modal.open { display: block; }
+                button:hover { background: rgb(255, 0, 0); }
+                button:focus { outline: 6px solid rgb(0, 255, 0); }
+                .panel { width: 200px; height: 100px; background: #6366f1; }
             </style>
         </head>
         <body>{$body}</body>
@@ -87,6 +90,38 @@ switch ($path) {
                 }), 50);
             </script>
             HTML);
+
+        return;
+
+    case '/admin/frame':
+        if (! $authenticated) {
+            header('Location: /admin/login');
+
+            return;
+        }
+
+        $layout(<<<'HTML'
+            <h1>Framed</h1>
+            <iframe id="preview" src="/admin/frame-content" style="width: 800px; height: 500px; border: 0"></iframe>
+            HTML);
+
+        return;
+
+    case '/admin/frame-content':
+        $layout(<<<'HTML'
+            <div style="padding: 40px">
+                <div class="panel" data-focus="panel"></div>
+                <span class="dup">A</span><span class="dup">B</span>
+                <div data-focus="hidden" style="display: none">Hidden</div>
+                <button id="open" onclick="document.getElementById('popup').style.display = 'block'">Open</button>
+                <div id="popup" class="panel" style="display: none"></div>
+            </div>
+            HTML);
+
+        return;
+
+    case '/plain':
+        echo '<!doctype html><html><body style="margin: 0; background: #fff"><h1>No dark mode</h1></body></html>';
 
         return;
 

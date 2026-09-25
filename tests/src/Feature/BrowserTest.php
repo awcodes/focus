@@ -202,3 +202,97 @@ it('produces identical pixels on repeated runs', function (): void {
 
     expect(md5_file("{$first}/docs/assets/stable-dark.png"))->toBe(md5_file("{$second}/docs/assets/stable-dark.png"));
 });
+
+it('frames a subject inside an iframe', function (): void {
+    [$results, $root] = capture([
+        Screenshot::make('framed')
+            ->visit('/admin/frame')
+            ->within('#preview', fn (Screenshot $screenshot) => $screenshot->focus('[data-focus="panel"]'))
+            ->padding(0)
+            ->scale(1)
+            ->themes([Theme::Light]),
+    ]);
+
+    expect(errors($results))->toBe([null])
+        ->and(getimagesize("{$root}/docs/assets/framed-light.png"))->toMatchArray([0 => 200, 1 => 100])
+        ->and(pixel("{$root}/docs/assets/framed-light.png", 100, 50))->toBe([99, 102, 241]);
+});
+
+it('runs interactions inside an iframe', function (): void {
+    [$results, $root] = capture([
+        Screenshot::make('popup')
+            ->visit('/admin/frame')
+            ->within('#preview', fn (Screenshot $screenshot) => $screenshot
+                ->click('#open')
+                ->waitFor('#popup')
+                ->focus('#popup'))
+            ->padding(0)
+            ->scale(1)
+            ->themes([Theme::Light]),
+    ]);
+
+    expect(errors($results))->toBe([null])
+        ->and(getimagesize("{$root}/docs/assets/popup-light.png"))->toMatchArray([0 => 200, 1 => 100]);
+});
+
+it('reports iframe selector failures with the frame', function (): void {
+    [$results] = capture([
+        Screenshot::make('missing')->visit('/admin/frame')->within('#preview', fn (Screenshot $s) => $s->focus('#nope')),
+        Screenshot::make('dup')->visit('/admin/frame')->within('#preview', fn (Screenshot $s) => $s->focus('.dup')),
+        Screenshot::make('hidden')->visit('/admin/frame')->within('#preview', fn (Screenshot $s) => $s->click('[data-focus="hidden"]')),
+    ], fn (ScreenshotSuite $suite) => $suite->themes([Theme::Light])->timeout(1_000));
+
+    expect(array_map(fn (CaptureResult $result) => $result->error?->reason, $results))->toBe([
+        FailureReason::SelectorNotFound,
+        FailureReason::SelectorAmbiguous,
+        FailureReason::SelectorHidden,
+    ])->and($results[0]->error->getMessage())->toBe('focus(#nope) in #preview matched no elements.')
+        ->and($results[2]->error->getMessage())->toContain('click([data-focus="hidden"]) in #preview');
+});
+
+/**
+ * @return array{focused: bool, hovered: bool}
+ */
+function interactionState(Screenshot $screenshot, string $selector = '[data-focus-action="open"]'): array
+{
+    $state = null;
+
+    capture([
+        $screenshot->beforeCapture(function (PageInterface $page) use (&$state, $selector): void {
+            $state = $page->evaluate('(selector) => ({ focused: document.activeElement === document.querySelector(selector), hovered: document.querySelector(selector).matches(":hover") })', $selector);
+        })->themes([Theme::Light]),
+    ]);
+
+    return $state;
+}
+
+it('clears the pointer and keyboard focus before capture', function (): void {
+    expect(interactionState(Screenshot::make('reset')->visit('/admin/page')->click('[data-focus-action="open"]')))
+        ->toBe(['focused' => false, 'hovered' => false]);
+});
+
+it('keeps a deliberate hover', function (): void {
+    expect(interactionState(Screenshot::make('hovered')->visit('/admin/page')->click('#title')->hover('[data-focus-action="open"]')))
+        ->toBe(['focused' => false, 'hovered' => true]);
+});
+
+it('keeps interaction state when asked', function (): void {
+    expect(interactionState(Screenshot::make('kept')->visit('/admin/page')->click('[data-focus-action="open"]')->keepInteractionState()))
+        ->toBe(['focused' => true, 'hovered' => true]);
+});
+
+it('clears focus inside iframes', function (): void {
+    $focused = null;
+
+    capture([
+        Screenshot::make('frame-focus')
+            ->visit('/admin/frame')
+            ->within('#preview', fn (Screenshot $screenshot) => $screenshot->click('#open'))
+            ->beforeCapture(function (PageInterface $page) use (&$focused): void {
+                $focused = $page->evaluate('() => document.getElementById("preview").contentDocument.activeElement.id');
+            })
+            ->themes([Theme::Light]),
+    ]);
+
+    expect($focused)->toBe('');
+});

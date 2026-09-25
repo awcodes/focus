@@ -9,6 +9,9 @@ use Awcodes\Focus\Enums\CaptureMode;
 use Awcodes\Focus\Enums\FailureReason;
 use Awcodes\Focus\Exceptions\CaptureException;
 use Awcodes\Focus\ScreenshotSuite;
+use Awcodes\Focus\Steps\Click;
+use Awcodes\Focus\Steps\Hover;
+use Awcodes\Focus\Steps\InFrame;
 use Awcodes\Focus\Steps\Step;
 use Closure;
 use DateTimeImmutable;
@@ -160,6 +163,10 @@ final readonly class Runner
                 }
             }
 
+            if (! $capture->keepInteractionState) {
+                $this->resetInteractionState($page, $capture);
+            }
+
             $this->callbacks('beforeCapture()', $capture->screenshot->getBeforeCaptureCallbacks(), $page);
 
             $this->shoot($page, $capture, $warnings);
@@ -263,7 +270,8 @@ final readonly class Runner
     private function frame(PageInterface $page, Capture $capture): array
     {
         $selector = (string) $capture->screenshot->getFocusSelector();
-        $locator = Elements::visible($page, $selector, "focus({$selector})");
+        $frame = $capture->screenshot->getFocusFrame();
+        $locator = Elements::visible($page, $selector, InFrame::describe("focus({$selector})", $frame), $frame);
         $locator->scrollIntoViewIfNeeded();
 
         $this->settle($page);
@@ -289,6 +297,33 @@ final readonly class Runner
             $document['width'],
             $document['height'],
         );
+    }
+
+    /**
+     * Clear what interactions leave behind: hover styles and tooltips under the pointer, and focus rings.
+     * A `hover()` after the last `click()` is deliberate, so the pointer stays put.
+     */
+    private function resetInteractionState(PageInterface $page, Capture $capture): void
+    {
+        if (! $this->endsWithHover($capture)) {
+            $page->mouse()->move(-1, -1);
+        }
+
+        $page->evaluate(Scripts::blur());
+        $this->settle($page);
+    }
+
+    private function endsWithHover(Capture $capture): bool
+    {
+        $last = null;
+
+        foreach ($capture->screenshot->getSteps() as $step) {
+            if ($step instanceof Click || $step instanceof Hover) {
+                $last = $step;
+            }
+        }
+
+        return $last instanceof Hover;
     }
 
     /**
@@ -325,6 +360,7 @@ final readonly class Runner
 
         $reason = match (true) {
             Timeouts::is($e) => FailureReason::Timeout,
+            str_contains($e->getMessage(), 'strict mode violation') => FailureReason::SelectorAmbiguous,
             $e instanceof PlaywrightExceptionInterface => FailureReason::Browser,
             default => FailureReason::Callback,
         };

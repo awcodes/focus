@@ -57,6 +57,7 @@ Most settings can be set on the suite for every screenshot, or on an individual 
 | `freezeTime(...)` | Fixed browser clock, or `false` for the real clock | `2026-01-01 09:00:00` |
 | `mask(...)` | Selectors to cover at capture time | none |
 | `maskColor(string)` | Mask fill colour | `#FF00FF` |
+| `keepInteractionState()` | Keep hover and focus left by interactions | cleared before capture |
 
 These settings are suite-level only:
 

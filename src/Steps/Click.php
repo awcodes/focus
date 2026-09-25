@@ -11,15 +11,16 @@ final readonly class Click implements Step
 {
     public function __construct(
         public string $selector,
+        public ?string $frame = null,
     ) {}
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        Elements::visible($page, $this->selector, $this->describe())->click();
+        Elements::visible($page, $this->selector, $this->describe(), $this->frame)->click();
     }
 
     public function describe(): string
     {
-        return "click({$this->selector})";
+        return InFrame::describe("click({$this->selector})", $this->frame);
     }
 }

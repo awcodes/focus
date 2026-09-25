@@ -39,6 +39,8 @@ trait HasCaptureSettings
 
     protected ?string $maskColor = null;
 
+    protected ?bool $keepInteractionState = null;
+
     /**
      * @param  array<Theme>  $themes
      */
@@ -140,6 +142,16 @@ trait HasCaptureSettings
         return $this;
     }
 
+    /**
+     * Keep the pointer position and keyboard focus left by interactions, instead of clearing them before capture.
+     */
+    public function keepInteractionState(bool $condition = true): static
+    {
+        $this->keepInteractionState = $condition;
+
+        return $this;
+    }
+
     public function maskColor(string $color): static
     {
         $this->maskColor = $color;
@@ -193,6 +205,11 @@ trait HasCaptureSettings
     public function getFrozenTime(): string | DateTimeInterface | false | null
     {
         return $this->frozenTime;
+    }
+
+    public function getKeepInteractionState(): ?bool
+    {
+        return $this->keepInteractionState;
     }
 
     public function getMaskColor(): ?string

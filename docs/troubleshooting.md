@@ -20,7 +20,7 @@ Focus could not reach the application.
 The run stops before any capture.
 
 - **"The login page returned HTTP 404"**: the application has no login at the configured path. Use `->login(path: '/your/login')`, or `->withoutLogin()` for public pages.
-- **"Signing in as … did not leave the login page"**: the credentials were rejected. The Workbench is usually not seeded with the development account; run `composer build`. For other credentials, configure `->login(...)`.
+- **"Signing in as … did not leave the login page"**: the credentials were rejected. The Workbench is usually not seeded with the development account, often because a Composer command reset it; run `composer build`. For other credentials, configure `->login(...)`.
 - **"The login page … has no … field"**: the form does not have a standard email field, password field, or submit button. Use `->authenticateUsing(...)` to sign in yourself.
 
 ## Navigation failed
@@ -29,8 +29,8 @@ A `visit()` returned an HTTP error. Check the URL against the Workbench routes a
 
 ## Selector not found, ambiguous, or hidden
 
-- **Not found**: nothing matched within the timeout. Check the selector in the browser's developer tools, and check it is not inside an iframe, since steps and `focus()` search the top-level page.
-- **Matched more than one element**: add a more specific `data-focus` hook. Focus never guesses which match you meant.
+- **Not found**: nothing matched within the timeout. Check the selector in the browser's developer tools. If the element is inside an iframe, wrap the steps in [`within()`](screenshots/interactions.md#inside-iframes).
+- **Matched more than one element**: add a more specific `data-focus` hook. If the other matches are hidden, such as closed modals, add `:visible`. Focus never guesses which match you meant.
 - **Hidden**: the element exists but is not visible or has no size. It may appear only after an interaction; add the `click()` or `hover()` that reveals it, followed by `waitFor()`.
 
 Run the screenshot with `--headed --only=name` to watch what happens.
@@ -65,10 +65,12 @@ Warnings do not fail a capture, but they are worth reading:
 
 - **"The page was still changing … captured anyway"**: something kept changing the page, such as polling or a looping animation with `allowAnimations()`. Add a `waitFor()` or `ready()` step for the state you want.
 - **"The framed region was larger than the document and was clamped"**: `minSize()` or `padding()` asked for more than the page contains, so the capture is smaller than requested.
+- **"Every theme produced an identical image"**: the page has no dark mode. Restrict it with `->themes([Theme::Light])`.
 
 ## Screenshots look wrong
 
 - **Unstyled or outdated UI**: the Workbench's published assets are stale. Run `composer build` in the package repository after pulling changes.
 - **Content changes on every run**: fixtures use random Faker data or `now()`. Make them deterministic, or `mask()` the affected elements. See [Workbench integration](workbench.md#deterministic-fixtures).
+- **Tooltips, hover styles, or focus rings**: Focus clears these before capture unless the last pointer step is a `hover()` or the screenshot uses `keepInteractionState()`. Anything set in a `beforeCapture()` callback is kept.
 - **Wrong theme inside an embedded preview**: the iframe controls its own colour scheme. The browser reports the requested theme, but the embedded document decides how to render it.
 - **Small differences between machines**: font rendering differs across operating systems. Regenerate from one consistent environment; see [Themes and rendering stability](screenshots/themes-and-stability.md#cross-platform-differences).

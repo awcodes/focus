@@ -17,10 +17,11 @@ final class Elements
      * Waiting here (within the context timeout) also sidesteps playwright-php's fixed 30s actionability poll.
      *
      * @param  string  $action  how the selector was used, for diagnostics, e.g. `click([data-focus-action="add"])`
+     * @param  string|null  $frame  an iframe selector to search inside, rather than the top-level document
      */
-    public static function visible(PageInterface $page, string $selector, string $action): LocatorInterface
+    public static function visible(PageInterface $page, string $selector, string $action, ?string $frame = null): LocatorInterface
     {
-        $locator = $page->locator($selector);
+        $locator = self::locate($page, $selector, $frame);
 
         try {
             $locator->first()->waitFor(['state' => 'attached']);
@@ -43,5 +44,12 @@ final class Elements
         }
 
         return $locator;
+    }
+
+    public static function locate(PageInterface $page, string $selector, ?string $frame = null): LocatorInterface
+    {
+        return $frame === null
+            ? $page->locator($selector)
+            : $page->frameLocator($frame)->locator($selector);
     }
 }

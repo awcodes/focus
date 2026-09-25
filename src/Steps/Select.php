@@ -15,15 +15,16 @@ final readonly class Select implements Step
     public function __construct(
         public string $selector,
         public string | array $values,
+        public ?string $frame = null,
     ) {}
 
     public function run(PageInterface $page, string $baseUrl): void
     {
-        Elements::visible($page, $this->selector, $this->describe())->selectOption($this->values);
+        Elements::visible($page, $this->selector, $this->describe(), $this->frame)->selectOption($this->values);
     }
 
     public function describe(): string
     {
-        return "select({$this->selector})";
+        return InFrame::describe("select({$this->selector})", $this->frame);
     }
 }

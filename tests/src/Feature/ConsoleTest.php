@@ -181,3 +181,19 @@ it('explains an unreachable base url', function (): void {
     expect($tester->getStatusCode())->toBe(1)
         ->and($tester->getDisplay())->toContain('Workbench unavailable', 'Nothing responded');
 });
+
+it('warns when every theme produces an identical image', function (): void {
+    if (! browserAvailable()) {
+        $this->markTestSkipped('Playwright is not installed.');
+    }
+
+    $root = tempDirectory();
+
+    browserManifest($root, "Screenshot::make('plain')->visit('/plain'), Screenshot::make('themed')->visit('/public')");
+    file_put_contents("{$root}/focus.php", str_replace('->timeout(2_000)', '->timeout(2_000)->withoutLogin()', file_get_contents("{$root}/focus.php")));
+
+    $display = focus($root, ['--base-url' => fixtureServer()])->getDisplay();
+
+    expect($display)->toContain('plain: every theme produced an identical image')
+        ->not->toContain('themed: every theme');
+});

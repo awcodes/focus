@@ -46,6 +46,9 @@ vendor/bin/focus --headed --only=brick-picker
 
 Opens a visible Chromium window. Use it while writing a screenshot definition to see what the browser sees. Headless is the default.
 
+> [!WARNING]
+> Do not commit screenshots from a headed run. Headed and headless Chromium can differ by a pixel, so headed output breaks the byte-for-byte stability of your assets. Run once more without `--headed` before committing.
+
 ## Output files
 
 Each capture is written as:
@@ -83,6 +86,10 @@ vendor/bin/focus --prune --force  # deletes without asking
 ```
 
 Pruning never touches files that do not match the scheme, so other images in `docs/assets` are safe. Orphans are not reported when `--only` or `--theme` is used, and `--prune` cannot be combined with them.
+
+## Warnings
+
+Warnings do not fail the run. Besides warnings for individual captures, Focus warns when a screenshot's light and dark images are byte-identical. That usually means the page has no dark mode, so the second file doubles the assets for nothing; restrict the screenshot with `->themes([Theme::Light])`.
 
 ## Exit codes
 

@@ -37,6 +37,8 @@ To frame the capture, Focus:
 6. shifts the region to stay inside the document;
 7. captures that region at the configured [scale](dimensions.md#scale).
 
+To frame a subject inside an iframe, call `focus()` inside [`within()`](interactions.md#inside-iframes).
+
 Because the region is measured in document coordinates, a focus capture can be taller or wider than the browser viewport. Focus captures it from the full document rather than resizing the viewport, which would change the responsive layout.
 
 ## Viewport
@@ -70,7 +72,7 @@ Screenshot::make('settings-page')
 | Situation | Behaviour |
 |---|---|
 | The selector matches nothing | The capture fails as **Selector not found**, naming the selector and URL. |
-| The selector matches several elements | The capture fails and reports the count. Focus never silently picks the first; add a more specific `data-focus` hook. |
+| The selector matches several elements | The capture fails and reports the count. Focus never silently picks the first; add a more specific `data-focus` hook, or `:visible` when the other matches are hidden. |
 | The element exists but is hidden or has no size | The capture fails as **Selector hidden**, distinct from not found. |
 | The region is larger than the viewport | It is captured from the full document; the viewport is not resized. |
 | The region is larger than the document | It is clamped to the document and the run prints a warning naming the screenshot. |

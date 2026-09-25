@@ -32,9 +32,48 @@ Screenshot::make('brick-picker')
 
 Every screenshot must call `visit()` at least once. Interaction selectors must match exactly one visible element: a selector that matches nothing, matches several elements, or matches a hidden element fails with a specific message.
 
+Hidden elements count as matches. Filament, for example, keeps closed modals in the page, so `.fi-modal-window` can match several elements while only one is open. Add Playwright's `:visible` pseudo-class to match only what is on screen:
+
+```php
+->focus('.fi-modal-window:visible')
+```
+
 A `visit()` that returns an HTTP error status fails as **Navigation failed**.
 
-Steps operate on the top-level page. To interact with content inside an iframe, use a callback with Playwright's `frameLocator()`.
+## Inside iframes
+
+Steps and `focus()` search the top-level page by default. To reach content inside an iframe, such as an editor preview, scope them with `within()`:
+
+```php
+Screenshot::make('block-controls')
+    ->visit('/admin/pages/1/edit')
+    ->within('iframe.mason-iframe', fn (Screenshot $screenshot) => $screenshot
+        ->click('[data-block-index="0"]')
+        ->waitFor('.mason-block-controls')
+        ->focus('.mason-block-controls'))
+    ->minSize(400, 200);
+```
+
+The first argument is a selector that matches exactly one iframe. Inside the closure, `click()`, `fill()`, `select()`, `hover()`, `press()`, `scrollIntoView()`, `waitFor()`, and `focus()` all resolve inside that frame. A focused subject inside an iframe is framed in page coordinates, so padding and minimum size can include the page around the frame.
+
+`visit()`, `mask()`, and nested `within()` calls are not allowed inside `within()`. Settings such as `padding()` can be called inside or outside it; they apply to the whole screenshot. Error messages name the frame, for example `focus(.modal) in iframe.mason-iframe matched no elements.`
+
+## Clearing interaction state
+
+Clicking leaves the pointer over the clicked element and keyboard focus on it, which shows up as hover styles, tooltips, and focus rings. Before capture, Focus clears both:
+
+- the pointer moves off the page, unless the last pointer step was a `hover()`, which is kept because hovering is deliberate;
+- the focused element is blurred, in the page and in every same-origin iframe.
+
+This happens after the steps and before `beforeCapture()` callbacks, so a hover or focus set in `beforeCapture()` is kept.
+
+To keep everything as the steps left it, for example to show a focused, filled input or a dropdown that closes when it loses focus:
+
+```php
+->keepInteractionState()
+```
+
+It works at screenshot and suite level.
 
 ## Readiness
 
@@ -84,10 +123,13 @@ Callbacks receive the live Playwright page, `Playwright\Page\PageInterface`, so 
 1. authentication (once per run, before any screenshot);
 2. the suite's `beforeEach()` callbacks;
 3. the screenshot's `before()` callbacks;
-4. the screenshot's steps, in order, each followed by a readiness wait;
-5. the screenshot's `beforeCapture()` callbacks;
-6. the capture;
-7. the screenshot's `after()` callbacks.
+4. the screenshot's steps, including `visit()`, in order, each followed by a readiness wait;
+5. clearing interaction state (see above);
+6. the screenshot's `beforeCapture()` callbacks;
+7. the capture;
+8. the screenshot's `after()` callbacks.
+
+`before()` callbacks run before the first `visit()`, on a blank page. Use them for page-level setup such as timeouts, headers, or routes. For work on the loaded page, use a `ready()` step, which runs in order with the other steps.
 
 ```php
 use Playwright\Page\PageInterface;

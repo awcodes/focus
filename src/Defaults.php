@@ -33,4 +33,6 @@ final class Defaults
     public const MASK_COLOR = '#FF00FF';
 
     public const TIMEOUT = 15_000;
+
+    public const KEEP_INTERACTION_STATE = false;
 }

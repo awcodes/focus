@@ -116,6 +116,8 @@ final class RunCommand extends Command
 
         $failed = array_filter($results, fn (CaptureResult $result): bool => ! $result->succeeded());
 
+        $this->warnAboutIdenticalThemes($output, $results);
+
         $output->writeln('');
         $output->writeln(sprintf(
             '%d captured, <%s>%d failed</>.',
@@ -129,6 +131,28 @@ final class RunCommand extends Command
         }
 
         return $failed === [] ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * A page without dark mode captures the same pixels in every theme, which doubles assets for nothing.
+     *
+     * @param  list<CaptureResult>  $results
+     */
+    private function warnAboutIdenticalThemes(OutputInterface $output, array $results): void
+    {
+        $hashes = [];
+
+        foreach ($results as $result) {
+            if ($result->succeeded() && is_file($result->capture->path)) {
+                $hashes[$result->capture->name()][] = md5_file($result->capture->path);
+            }
+        }
+
+        foreach ($hashes as $name => $screenshotHashes) {
+            if (count($screenshotHashes) > 1 && count(array_unique($screenshotHashes)) === 1) {
+                $output->writeln("    <comment>!</comment> {$name}: every theme produced an identical image, so the page may not support dark mode. Consider ->themes([Theme::Light]).");
+            }
+        }
     }
 
     private function server(InputInterface $input, ScreenshotSuite $suite): WorkbenchServer

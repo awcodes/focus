@@ -37,6 +37,13 @@ class Screenshot
 
     protected ?string $focusSelector = null;
 
+    protected ?string $focusFrame = null;
+
+    /**
+     * The iframe selector steps are scoped to while inside `within()`.
+     */
+    protected ?string $frame = null;
+
     /** @var list<string> */
     protected array $masks = [];
 
@@ -60,17 +67,19 @@ class Screenshot
 
     public function visit(string $url): static
     {
+        $this->ensureNotInFrame('visit()');
+
         return $this->step(new Visit($url));
     }
 
     public function click(string $selector): static
     {
-        return $this->step(new Click($selector));
+        return $this->step(new Click($selector, $this->frame));
     }
 
     public function fill(string $selector, string $value): static
     {
-        return $this->step(new Fill($selector, $value));
+        return $this->step(new Fill($selector, $value, $this->frame));
     }
 
     /**
@@ -78,12 +87,12 @@ class Screenshot
      */
     public function select(string $selector, string | array $values): static
     {
-        return $this->step(new Select($selector, $values));
+        return $this->step(new Select($selector, $values, $this->frame));
     }
 
     public function hover(string $selector): static
     {
-        return $this->step(new Hover($selector));
+        return $this->step(new Hover($selector, $this->frame));
     }
 
     /**
@@ -91,17 +100,17 @@ class Screenshot
      */
     public function press(string $key, ?string $selector = null): static
     {
-        return $this->step(new Press($key, $selector));
+        return $this->step(new Press($key, $selector, $this->frame));
     }
 
     public function scrollIntoView(string $selector): static
     {
-        return $this->step(new ScrollIntoView($selector));
+        return $this->step(new ScrollIntoView($selector, $this->frame));
     }
 
     public function waitFor(string $selector, ?int $timeout = null): static
     {
-        return $this->step(new WaitFor($selector, $timeout));
+        return $this->step(new WaitFor($selector, $timeout, $this->frame));
     }
 
     /**
@@ -126,6 +135,27 @@ class Screenshot
         return $this->step(new Callback($callback, 'ready()'));
     }
 
+    /**
+     * Scope steps and `focus()` to the document inside an iframe.
+     *
+     * @param  string  $frame  a selector matching exactly one iframe
+     * @param  Closure(static): mixed  $steps
+     */
+    public function within(string $frame, Closure $steps): static
+    {
+        $this->ensureNotInFrame('within()');
+
+        $this->frame = $frame;
+
+        try {
+            $steps($this);
+        } finally {
+            $this->frame = null;
+        }
+
+        return $this;
+    }
+
     public function step(Step $step): static
     {
         $this->steps[] = $step;
@@ -140,6 +170,7 @@ class Screenshot
     {
         $this->captureModes[] = CaptureMode::Focus;
         $this->focusSelector = $selector;
+        $this->focusFrame = $this->frame;
 
         return $this;
     }
@@ -166,6 +197,8 @@ class Screenshot
      */
     public function mask(string ...$selectors): static
     {
+        $this->ensureNotInFrame('mask()');
+
         array_push($this->masks, ...$selectors);
 
         return $this;
@@ -251,6 +284,14 @@ class Screenshot
     }
 
     /**
+     * The iframe the focus subject lives in, if it was set inside `within()`.
+     */
+    public function getFocusFrame(): ?string
+    {
+        return $this->focusFrame;
+    }
+
+    /**
      * @return list<string>
      */
     public function getMasks(): array
@@ -280,5 +321,12 @@ class Screenshot
     public function getAfterCallbacks(): array
     {
         return $this->after;
+    }
+
+    private function ensureNotInFrame(string $method): void
+    {
+        if ($this->frame !== null) {
+            throw new InvalidArgumentException("{$method} cannot be used inside within(); it applies to the top-level page.");
+        }
     }
 }

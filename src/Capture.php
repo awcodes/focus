@@ -33,6 +33,7 @@ final readonly class Capture
         public ?DateTimeImmutable $frozenTime,
         public array $masks,
         public string $maskColor,
+        public bool $keepInteractionState,
         public string $path,
     ) {}
 
@@ -57,6 +58,7 @@ final readonly class Capture
             ),
             masks: array_values(array_unique([...$suite->getMasks(), ...$screenshot->getMasks()])),
             maskColor: $screenshot->getMaskColor() ?? $suite->getMaskColor() ?? Defaults::MASK_COLOR,
+            keepInteractionState: $screenshot->getKeepInteractionState() ?? $suite->getKeepInteractionState() ?? Defaults::KEEP_INTERACTION_STATE,
             path: $outputDirectory . DIRECTORY_SEPARATOR . self::filename($screenshot->getName(), $theme),
         );
     }

@@ -167,6 +167,30 @@ final class Scripts
             JS;
     }
 
+    /**
+     * Blur the focused element in the page and every same-origin iframe, so no focus ring is captured.
+     */
+    public static function blur(): string
+    {
+        return <<<'JS'
+            () => {
+                const blur = (doc) => {
+                    if (doc.activeElement && doc.activeElement !== doc.body) {
+                        doc.activeElement.blur();
+                    }
+
+                    for (const frame of doc.querySelectorAll('iframe')) {
+                        try {
+                            if (frame.contentDocument) blur(frame.contentDocument);
+                        } catch (e) {}
+                    }
+                };
+
+                blur(document);
+            }
+            JS;
+    }
+
     public static function unmask(): string
     {
         return '(tag) => document.querySelectorAll(tag).forEach((el) => el.remove())';

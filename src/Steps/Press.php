@@ -12,6 +12,7 @@ final readonly class Press implements Step
     public function __construct(
         public string $key,
         public ?string $selector = null,
+        public ?string $frame = null,
     ) {}
 
     public function run(PageInterface $page, string $baseUrl): void
@@ -22,13 +23,13 @@ final readonly class Press implements Step
             return;
         }
 
-        Elements::visible($page, $this->selector, $this->describe())->press($this->key);
+        Elements::visible($page, $this->selector, $this->describe(), $this->frame)->press($this->key);
     }
 
     public function describe(): string
     {
-        return $this->selector === null
+        return InFrame::describe($this->selector === null
             ? "press({$this->key})"
-            : "press({$this->key}, {$this->selector})";
+            : "press({$this->key}, {$this->selector})", $this->frame);
     }
 }

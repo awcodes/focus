@@ -65,3 +65,38 @@ it('validates setting arguments eagerly', function (callable $call, string $mess
     'bad frozen time' => [fn ($s) => $s->freezeTime('not a date'), 'freezeTime()'],
     'negative wait' => [fn ($s) => $s->wait(-5), 'wait()'],
 ]);
+
+it('scopes steps and focus to an iframe inside within()', function (): void {
+    $screenshot = Screenshot::make('a')
+        ->visit('/admin')
+        ->within('iframe.preview', fn (Screenshot $s) => $s->click('.add')->waitFor('.modal')->focus('.modal'))
+        ->click('.outside');
+
+    expect(array_map(fn ($step) => $step->describe(), $screenshot->getSteps()))->toBe([
+        'visit(/admin)',
+        'click(.add) in iframe.preview',
+        'waitFor(.modal) in iframe.preview',
+        'click(.outside)',
+    ])->and($screenshot->getFocusSelector())->toBe('.modal')
+        ->and($screenshot->getFocusFrame())->toBe('iframe.preview');
+});
+
+it('rejects top-level-only methods inside within()', function (callable $call, string $method): void {
+    expect(fn () => Screenshot::make('a')->within('iframe', $call))
+        ->toThrow(InvalidArgumentException::class, "{$method} cannot be used inside within()");
+})->with([
+    'visit' => [fn (Screenshot $s) => $s->visit('/x'), 'visit()'],
+    'mask' => [fn (Screenshot $s) => $s->mask('.x'), 'mask()'],
+    'nested within' => [fn (Screenshot $s) => $s->within('iframe', fn () => null), 'within()'],
+]);
+
+it('leaves the frame scope when within() ends, even after an exception', function (): void {
+    $screenshot = Screenshot::make('a');
+
+    try {
+        $screenshot->within('iframe', fn () => throw new RuntimeException('boom'));
+    } catch (RuntimeException) {
+    }
+
+    expect($screenshot->click('.x')->getSteps()[0]->describe())->toBe('click(.x)');
+});
