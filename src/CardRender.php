@@ -94,7 +94,9 @@ final readonly class CardRender
         $title = $card->getTitle() ?? $metadata->title()
             ?? throw new FocusException("Card [{$card->getName()}] needs a title: composer.json has no package name. Add ->title().");
 
+        // `install` is a default that with() may replace; a dev tool, for one, is installed with --dev.
         return [
+            'install' => $metadata->name === null ? '' : "composer require {$metadata->name}",
             ...$card->getValues(),
             'title' => $title,
             'description' => $card->getDescription() ?? $metadata->description ?? '',

@@ -71,6 +71,7 @@ it('fills values from composer.json', function (): void {
         ->planCards(cardRepository());
 
     expect($render->values)->toBe([
+        'install' => 'composer require awcodes/filament-curator',
         'tagline' => 'Pick media',
         'title' => 'Filament Curator',
         'description' => 'A media library.',
@@ -101,7 +102,7 @@ it('renders without composer.json when the card has a title', function (): void 
         ->cards([Card::make('social')->title('Focus')])
         ->planCards(tempDirectory());
 
-    expect($render->values)->toBe(['title' => 'Focus', 'description' => '', 'package' => '']);
+    expect($render->values)->toBe(['install' => '', 'title' => 'Focus', 'description' => '', 'package' => '']);
 });
 
 it('maps screenshots to slots with every captured theme', function (): void {
@@ -156,3 +157,12 @@ it('rejects unknown names passed to --only', function (): void {
         ->cards([Card::make('social')->title('Mason')])
         ->planCards('/repo', ['social', 'nope']);
 })->throws(FocusException::class, 'Unknown screenshot(s) or card(s) passed to --only: nope.');
+
+it('lets with() replace the install command', function (): void {
+    [$render] = ScreenshotSuite::make()
+        ->cardTemplates('templates')
+        ->cards([Card::make('social')->with(['install' => 'composer require --dev awcodes/filament-curator'])])
+        ->planCards(cardRepository());
+
+    expect($render->values['install'])->toBe('composer require --dev awcodes/filament-curator');
+});

@@ -204,9 +204,9 @@ it('fails on unusable data-focus keys and keeps the previous file', function ():
     expect($result->error?->reason)->toBe(FailureReason::Template)
         ->and($result->error?->getMessage())->toBe(implode(PHP_EOL, [
             'Template [default] has unusable data-focus keys:',
-            '  - [titel] is not a value this card provides (title, description, package).',
+            '  - [titel] is not a value this card provides (install, title, description, package).',
             '  - [screenshot.3]: the card passes 1 screenshot, so there is no screenshot 3.',
-            '  - [tagline] is not a value this card provides (title, description, package).',
+            '  - [tagline] is not a value this card provides (install, title, description, package).',
             '  - screenshot.1 on <div>: screenshot keys only work on <img>. Use the --focus-screenshot-N CSS variables for backgrounds.',
         ]))
         ->and(file_get_contents("{$root}/art/social-open-graph-dark.png"))->toBe('previous');
