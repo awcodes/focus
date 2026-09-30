@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Awcodes\Focus\Console;
 
 use Awcodes\Focus\Capture;
+use Awcodes\Focus\CardRender;
 use Awcodes\Focus\Exceptions\CaptureException;
 use Awcodes\Focus\Runtime\CaptureResult;
+use Awcodes\Focus\Runtime\CardResult;
 use Awcodes\Focus\Runtime\RunObserver;
 use Closure;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -37,6 +39,38 @@ final readonly class ConsoleObserver implements RunObserver
             $this->output->writeln("  <info>✓</info> {$capture->label()} <fg=gray>→ {$this->relative($capture->path)} ({$time})</>");
         } else {
             $this->failure($capture, $result->error);
+        }
+
+        foreach ($result->warnings as $warning) {
+            $this->output->writeln("    <comment>!</comment> {$warning}");
+        }
+    }
+
+    public function cardStarting(CardRender $render): void
+    {
+        if ($this->output->isVerbose()) {
+            $this->output->writeln("  <fg=gray>…</> {$render->label()}");
+        }
+    }
+
+    public function cardFinished(CardResult $result): void
+    {
+        $render = $result->render;
+        $time = number_format($result->seconds, 1) . 's';
+
+        if ($result->succeeded()) {
+            $this->output->writeln("  <info>✓</info> {$render->label()} <fg=gray>→ {$this->relative($render->path)} ({$time})</>");
+        } elseif ($result->error instanceof CaptureException) {
+            $this->output->writeln("  <error> ✗ </error> {$render->label()} <fg=red>{$result->error->reason->value}</>");
+            $this->output->writeln("      {$result->error->getMessage()}");
+
+            foreach (['Card' => $render->name(), 'Template' => $render->template] as $label => $value) {
+                $this->output->writeln(sprintf('      <fg=gray>%-10s</> %s', $label, $value));
+            }
+
+            if (is_file($render->path)) {
+                $this->output->writeln("      <fg=yellow>Not updated:</> {$this->relative($render->path)} is from a previous run.");
+            }
         }
 
         foreach ($result->warnings as $warning) {

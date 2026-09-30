@@ -197,3 +197,144 @@ it('warns when every theme produces an identical image', function (): void {
     expect($display)->toContain('plain: every theme produced an identical image')
         ->not->toContain('themed: every theme');
 });
+
+/**
+ * A repository with composer.json, a card template directory, and a manifest defining the given screenshots and cards.
+ */
+function cardRepositoryFor(string $screenshots, string $cards, string $template = '<img data-focus="screenshot.1" alt="" style="display: block; width: 100%">'): string
+{
+    $root = tempDirectory();
+
+    file_put_contents("{$root}/composer.json", json_encode(['name' => 'acme/plugin', 'description' => 'A plugin.']));
+    mkdir("{$root}/templates");
+    file_put_contents("{$root}/templates/default.html", "<!doctype html><html><head><meta charset=\"utf-8\"><style>body { margin: 0; background: #080 }</style></head><body>{$template}</body></html>");
+    file_put_contents("{$root}/focus.php", <<<PHP
+        <?php
+
+        use Awcodes\\Focus\\Card;
+        use Awcodes\\Focus\\Enums\\Theme;
+        use Awcodes\\Focus\\Screenshot;
+        use Awcodes\\Focus\\ScreenshotSuite;
+
+        return ScreenshotSuite::make()
+            ->timeout(2_000)
+            ->cardTemplates('templates')
+            ->screenshots([{$screenshots}])
+            ->cards([{$cards}]);
+        PHP);
+
+    return $root;
+}
+
+it('lists planned cards', function (): void {
+    $root = cardRepositoryFor(
+        "Screenshot::make('editor')->visit('/admin')",
+        "Card::make('social')->screenshots(['editor'])->themes([Theme::Light, Theme::Dark])->sizes([[1920, 1080]])",
+    );
+
+    $display = focus($root, ['--list' => true, '--cards-only' => true])->getDisplay();
+
+    expect($display)
+        ->toContain('social', 'default', '1920x1080', '3840x2160', 'art/social-1920x1080-light.png', 'art/social-1920x1080-dark.png')
+        ->not->toContain('docs/assets/editor');
+});
+
+it('rejects --no-cards with --cards-only', function (): void {
+    $tester = focus(dirname(manifestFixture('valid.php')), ['--config' => 'valid.php', '--no-cards' => true, '--cards-only' => true]);
+
+    expect($tester->getStatusCode())->toBe(1)
+        ->and($tester->getDisplay())->toContain('--no-cards and --cards-only cannot be combined.');
+});
+
+it('reports a missing card template before starting a browser', function (): void {
+    $root = cardRepositoryFor("Screenshot::make('editor')->visit('/admin')", "Card::make('social')->template('two-up')");
+
+    $tester = focus($root, ['--base-url' => 'http://127.0.0.1:1']);
+
+    expect($tester->getStatusCode())->toBe(1)
+        ->and($tester->getDisplay())->toContain('Card template [two-up] not found')
+        ->not->toContain('Workbench unavailable');
+});
+
+it('renders cards without Workbench', function (): void {
+    if (! browserAvailable()) {
+        $this->markTestSkipped('Playwright is not installed.');
+    }
+
+    $root = cardRepositoryFor("Screenshot::make('editor')->visit('/admin')", "Card::make('social')->scale(1)", '<h1 data-focus="title"></h1>');
+
+    $tester = focus($root, ['--cards-only' => true]);
+
+    expect($tester->getStatusCode())->toBe(0)
+        ->and($tester->getDisplay())
+        ->toContain('rendering 1 card(s) from templates', 'social (open-graph, dark)', 'art/social-open-graph-dark.png', '1 rendered, 0 failed.')
+        ->not->toContain('capturing', 'Workbench')
+        ->and(getimagesize("{$root}/art/social-open-graph-dark.png"))->toMatchArray([0 => 1200, 1 => 630]);
+});
+
+it('renders cards from the screenshots captured in the same run', function (): void {
+    if (! browserAvailable()) {
+        $this->markTestSkipped('Playwright is not installed.');
+    }
+
+    $root = cardRepositoryFor(
+        <<<'PHP'
+            Screenshot::make('page')->visit('/admin/page')->themes([Theme::Light]),
+            Screenshot::make('broken')->visit('/admin/page')->focus('[data-focus="nope"]')->themes([Theme::Light]),
+            PHP,
+        <<<'PHP'
+            Card::make('fresh')->screenshots(['page'])->themes([Theme::Light])->scale(1),
+            Card::make('stale')->screenshots(['broken'])->themes([Theme::Light])->scale(1),
+            PHP,
+    );
+
+    mkdir("{$root}/art");
+    file_put_contents("{$root}/art/stale-open-graph-light.png", 'previous');
+
+    $tester = focus($root, ['--base-url' => fixtureServer()]);
+
+    expect($tester->getStatusCode())->toBe(1)
+        ->and($tester->getDisplay())->toContain(
+            'capturing 2 screenshot(s)',
+            'and rendering 2 card(s) from templates',
+            'fresh (open-graph, light)',
+            'stale (open-graph, light)',
+            'Screenshot failed',
+            'Not rendered: screenshot(s) broken failed in this run.',
+            'Not updated: art/stale-open-graph-light.png is from a previous run.',
+            '1 captured, 1 rendered, 2 failed.',
+        )
+        ->and(pixel("{$root}/art/fresh-open-graph-light.png", 5, 5))->toBe([255, 255, 255])
+        ->and(file_get_contents("{$root}/art/stale-open-graph-light.png"))->toBe('previous');
+
+    $filtered = focus($root, ['--only' => ['fresh']]);
+
+    expect($filtered->getStatusCode())->toBe(0)
+        ->and($filtered->getDisplay())
+        ->toContain('Cards use the existing page screenshot file(s), which this run does not capture.')
+        ->not->toContain('capturing');
+});
+
+it('reports card orphans, and skips the card directory with --no-cards', function (): void {
+    if (! browserAvailable()) {
+        $this->markTestSkipped('Playwright is not installed.');
+    }
+
+    $root = cardRepositoryFor("Screenshot::make('editor')->visit('/admin')", "Card::make('social')->scale(1)", '<h1 data-focus="title"></h1>');
+
+    mkdir("{$root}/art");
+    touch("{$root}/art/old-open-graph-dark.png");
+    touch("{$root}/art/banner.png");
+
+    $cardsOnly = focus($root, ['--cards-only' => true])->getDisplay();
+
+    expect($cardsOnly)->toContain('1 orphaned asset(s)', 'art/old-open-graph-dark.png')
+        ->not->toContain('art/banner.png', 'art/social-open-graph-dark.png');
+
+    file_put_contents("{$root}/focus.php", str_replace("->cardTemplates('templates')", "->cardTemplates('templates')->withoutLogin()", file_get_contents("{$root}/focus.php")));
+    file_put_contents("{$root}/focus.php", str_replace("visit('/admin')", "visit('/public')", file_get_contents("{$root}/focus.php")));
+
+    $noCards = focus($root, ['--base-url' => fixtureServer(), '--no-cards' => true])->getDisplay();
+
+    expect($noCards)->not->toContain('orphaned', 'rendering');
+});

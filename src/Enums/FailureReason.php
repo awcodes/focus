@@ -15,6 +15,7 @@ enum FailureReason: string
     case Timeout = 'Timed out';
     case Callback = 'Callback failed';
     case Template = 'Template error';
+    case Dependency = 'Screenshot failed';
     case Output = 'Could not write output';
     case Browser = 'Browser error';
 }
