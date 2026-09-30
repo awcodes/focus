@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "bin/**"
+      - "src/**"
+      - "stubs/**"
+      - "tests/**"
+      - "composer.json"
+      - "phpunit.xml*"
+      - "phpstan.neon*"
+      - "rector.php"
+      - "pint.json"
+      - ".github/workflows/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "bin/**"
+      - "src/**"
+      - "stubs/**"
+      - "tests/**"
+      - "composer.json"
+      - "phpunit.xml*"
+      - "phpstan.neon*"
+      - "rector.php"
+      - "pint.json"
+      - ".github/workflows/**"
+
+jobs:
+  ci:
+    uses: awcodes/.github/.github/workflows/php-library.yml@v1
+    with:
+      # composer.json allows PHP 8.2, but like the rest of the fleet CI starts at 8.3.
+      # The prefer-lowest row keeps the wide constraints honest (symfony/process 6.4,
+      # playwright-php 1.5, Pest 3); it was resolved and run locally before being added.
+      matrix: |
+        [
+          {"php":"8.5","dependencies":"prefer-stable"},
+          {"php":"8.4","dependencies":"prefer-stable"},
+          {"php":"8.3","dependencies":"prefer-stable"},
+          {"php":"8.3","dependencies":"prefer-lowest"}
+        ]
+      run-tests: true
+      run-lint: true
+      run-static-analysis: true
+      run-reformat: true
+
+  # The shared Tests job does not install a browser, so every test that drives
+  # Chromium skips there. That is most of what Focus does: capturing, framing, card
+  # rendering, and the CLI end to end. This job installs the Playwright server and
+  # Chromium, with the system libraries Chromium needs on Ubuntu, and runs the whole
+  # suite. It runs serially because the browser tests share a fixture server.
+  browser:
+    name: Browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: awcodes/.github/actions/setup-php@v1
+        with:
+          php-version: "8.4"
+
+      - name: Install dependencies
+        uses: awcodes/.github/actions/install-dependencies@v1
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Install Playwright and Chromium
+        run: vendor/bin/playwright-install chromium --with-deps
+
+      - name: Run tests
+        run: vendor/bin/pest
