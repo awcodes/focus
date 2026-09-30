@@ -338,3 +338,39 @@ it('reports card orphans, and skips the card directory with --no-cards', functio
 
     expect($noCards)->not->toContain('orphaned', 'rendering');
 });
+
+it('lists a GitHub template source without resolving it', function (): void {
+    $root = cardRepositoryFor("Screenshot::make('editor')->visit('/admin')", "Card::make('social')");
+    file_put_contents("{$root}/focus.php", str_replace("->cardTemplates('templates')", "->cardTemplates('github:acme/card-templates/dist@main')", file_get_contents("{$root}/focus.php")));
+
+    $display = focus($root, ['--list' => true, '--cards-only' => true])->getDisplay();
+
+    expect($display)->toContain('Card templates: github:acme/card-templates/dist@main', 'art/social-open-graph-dark.png');
+});
+
+it('renders cards from a cached GitHub template source', function (): void {
+    if (! browserAvailable()) {
+        $this->markTestSkipped('Playwright is not installed.');
+    }
+
+    $commit = str_repeat('a', 40);
+    $cache = tempDirectory();
+    mkdir("{$cache}/github/acme/card-templates/{$commit}/dist", recursive: true);
+    file_put_contents("{$cache}/github/acme/card-templates/{$commit}/dist/default.html", '<!doctype html><html><body><h1 data-focus="title"></h1></body></html>');
+
+    $root = cardRepositoryFor("Screenshot::make('editor')->visit('/admin')", "Card::make('social')->scale(1)");
+    file_put_contents("{$root}/focus.php", str_replace("->cardTemplates('templates')", "->cardTemplates('github:acme/card-templates/dist@{$commit}')", file_get_contents("{$root}/focus.php")));
+
+    $previous = getenv('FOCUS_CACHE_DIR');
+    putenv("FOCUS_CACHE_DIR={$cache}");
+
+    try {
+        $tester = focus($root, ['--cards-only' => true]);
+    } finally {
+        putenv($previous === false ? 'FOCUS_CACHE_DIR' : "FOCUS_CACHE_DIR={$previous}");
+    }
+
+    expect($tester->getStatusCode())->toBe(0)
+        ->and($tester->getDisplay())->toContain("rendering 1 card(s) from acme/card-templates@{$commit} dist", '1 rendered, 0 failed.')
+        ->and(file_exists("{$root}/art/social-open-graph-dark.png"))->toBeTrue();
+});

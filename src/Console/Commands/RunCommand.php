@@ -19,7 +19,9 @@ use Awcodes\Focus\Runtime\Orphans;
 use Awcodes\Focus\Runtime\Runner;
 use Awcodes\Focus\Runtime\WorkbenchServer;
 use Awcodes\Focus\ScreenshotSuite;
-use Awcodes\Focus\Support\TemplateDirectory;
+use Awcodes\Focus\Templates\GitHubReference;
+use Awcodes\Focus\Templates\ResolvedTemplates;
+use Awcodes\Focus\Templates\TemplateSources;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -44,6 +46,7 @@ final class RunCommand extends Command
             ->addOption('theme', null, InputOption::VALUE_REQUIRED, 'Only generate one theme (' . implode(', ', array_column(Theme::cases(), 'value')) . ')')
             ->addOption('no-cards', null, InputOption::VALUE_NONE, 'Capture screenshots only')
             ->addOption('cards-only', null, InputOption::VALUE_NONE, 'Render cards only, without starting Workbench')
+            ->addOption('refresh-templates', null, InputOption::VALUE_NONE, 'Download GitHub card templates again instead of using the cache')
             ->addOption('headed', null, InputOption::VALUE_NONE, 'Show the browser while capturing')
             ->addOption('base-url', null, InputOption::VALUE_REQUIRED, 'Connect to a running application instead of starting Workbench')
             ->addOption('prune', null, InputOption::VALUE_NONE, 'Delete orphaned assets after an unfiltered run')
@@ -68,7 +71,6 @@ final class RunCommand extends Command
             $theme = $this->theme($input);
             $captures = $input->getOption('cards-only') ? [] : $suite->plan($this->workingDirectory, $only, $theme);
             $renders = $input->getOption('no-cards') ? [] : $suite->planCards($this->workingDirectory, $only, $theme);
-            $templates = $renders === [] ? null : $this->templates($suite, $renders);
         } catch (FocusException $e) {
             $io->error($e->getMessage());
 
@@ -81,10 +83,19 @@ final class RunCommand extends Command
             return self::SUCCESS;
         }
 
+        // Listing never touches the network, so a GitHub template source is shown as configured.
         if ($input->getOption('list')) {
-            $this->list($io, $captures, $renders);
+            $this->list($io, $captures, $renders, $renders === [] ? null : $suite->getCardTemplates());
 
             return self::SUCCESS;
+        }
+
+        try {
+            $templates = $renders === [] ? null : $this->templates($suite, $renders, (bool) $input->getOption('refresh-templates'));
+        } catch (FocusException $e) {
+            $io->error($e->getMessage());
+
+            return self::FAILURE;
         }
 
         $filtered = $only !== [] || $theme instanceof Theme;
@@ -109,10 +120,14 @@ final class RunCommand extends Command
             $server instanceof WorkbenchServer
                 ? sprintf('capturing %d screenshot(s) from %s%s', count($captures), $server->url, $server->started() ? ' <fg=gray>(Workbench started by Focus)</>' : '')
                 : null,
-            $templates instanceof TemplateDirectory
-                ? sprintf('rendering %d card(s) from %s', count($renders), $this->relative($templates->path))
+            $templates instanceof ResolvedTemplates
+                ? sprintf('rendering %d card(s) from %s', count($renders), GitHubReference::isGitHub((string) $suite->getCardTemplates()) ? $templates->label : $this->relative($templates->directory->path))
                 : null,
         ])));
+
+        foreach ($templates->warnings ?? [] as $warning) {
+            $output->writeln("    <comment>!</comment> {$warning}");
+        }
 
         $reused = $this->reusedScreenshots($captures, $renders);
 
@@ -122,7 +137,7 @@ final class RunCommand extends Command
 
         try {
             $results = (new Runner($observer, $this->sessions($input, $suite)))
-                ->runAll($suite, $captures, $server?->url, $renders, $templates, (bool) $input->getOption('headed'));
+                ->runAll($suite, $captures, $server?->url, $renders, $templates?->directory, (bool) $input->getOption('headed'));
         } catch (CaptureException $e) {
             $io->error("{$e->reason->value}: {$e->getMessage()}");
 
@@ -163,16 +178,16 @@ final class RunCommand extends Command
     }
 
     /**
-     * The card template directory, with every planned template found before a browser starts.
+     * The card template directory, downloaded when it is on GitHub, with every planned template found before a browser starts.
      *
      * @param  list<CardRender>  $renders
      */
-    private function templates(ScreenshotSuite $suite, array $renders): TemplateDirectory
+    private function templates(ScreenshotSuite $suite, array $renders, bool $refresh): ResolvedTemplates
     {
-        $templates = new TemplateDirectory((string) $suite->resolveCardTemplatesDirectory($this->workingDirectory));
+        $templates = TemplateSources::fromEnvironment($this->workingDirectory)->resolve((string) $suite->getCardTemplates(), $refresh);
 
         foreach (array_unique(array_map(fn (CardRender $render): string => $render->template, $renders)) as $name) {
-            $templates->find($name);
+            $templates->directory->find($name);
         }
 
         return $templates;
@@ -182,7 +197,7 @@ final class RunCommand extends Command
      * @param  list<Capture>  $captures
      * @param  list<CardRender>  $renders
      */
-    private function list(SymfonyStyle $io, array $captures, array $renders): void
+    private function list(SymfonyStyle $io, array $captures, array $renders, ?string $templates): void
     {
         if ($captures !== []) {
             $io->table(
@@ -199,6 +214,7 @@ final class RunCommand extends Command
         }
 
         if ($renders !== []) {
+            $io->writeln("Card templates: {$templates}");
             $io->table(
                 ['Card', 'Template', 'Theme', 'Size', 'Pixels', 'Output'],
                 array_map(fn (CardRender $render): array => [
