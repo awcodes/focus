@@ -74,17 +74,10 @@ final readonly class Capture
         return "{$name}-{$theme->value}.png";
     }
 
-    public function name(): string
-    {
-        return $this->screenshot->getName();
-    }
-
-    public function label(): string
-    {
-        return "{$this->name()} ({$this->theme->value})";
-    }
-
-    private static function resolveFrozenTime(string | DateTimeInterface | false $time, string $timezone): ?DateTimeImmutable
+    /**
+     * Strings are interpreted in the given timezone; `false` means the real clock.
+     */
+    public static function resolveFrozenTime(string | DateTimeInterface | false $time, string $timezone): ?DateTimeImmutable
     {
         if ($time === false) {
             return null;
@@ -95,5 +88,15 @@ final readonly class Capture
         }
 
         return new DateTimeImmutable($time, new DateTimeZone($timezone));
+    }
+
+    public function name(): string
+    {
+        return $this->screenshot->getName();
+    }
+
+    public function label(): string
+    {
+        return "{$this->name()} ({$this->theme->value})";
     }
 }

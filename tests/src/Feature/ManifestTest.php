@@ -51,3 +51,50 @@ it('ignores suite-level padding and min size for non-focus screenshots', functio
 
     expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite))->toBe([]);
 });
+
+it('accepts a suite with only cards', function (): void {
+    $suite = ScreenshotSuite::make()
+        ->cardTemplates('templates')
+        ->cards([Awcodes\Focus\Card::make('social')]);
+
+    expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite))->toBe([]);
+});
+
+it('requires screenshots or cards', function (): void {
+    expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate(ScreenshotSuite::make()))
+        ->toBe(['The suite does not define any screenshots or cards.']);
+});
+
+it('reports every card validation error at once', function (): void {
+    $suite = ScreenshotSuite::make()
+        ->cardOutputPath(' ')
+        ->screenshots([
+            Awcodes\Focus\Screenshot::make('editor')->visit('/admin'),
+            Awcodes\Focus\Screenshot::make('picker')->visit('/admin')->themes([Awcodes\Focus\Enums\Theme::Light]),
+        ])
+        ->cards([
+            Awcodes\Focus\Card::make('Social'),
+            Awcodes\Focus\Card::make('editor'),
+            Awcodes\Focus\Card::make('banner')->screenshots(['editor', 'missing', 'picker', 'picker']),
+            Awcodes\Focus\Card::make('both')
+                ->themes([Awcodes\Focus\Enums\Theme::Light, Awcodes\Focus\Enums\Theme::Dark])
+                ->screenshots(['editor']),
+        ]);
+
+    expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite))->toBe([
+        'cards() requires cardTemplates(): the directory of built card templates.',
+        'cardOutputPath() must not be empty.',
+        'Card name [Social] must be lowercase kebab-case (e.g. [social]).',
+        'Duplicate name [editor]: screenshot and card names must be unique across the suite.',
+        'Card [banner] uses unknown screenshot [missing].',
+        "Card [banner] renders in [dark], but screenshot [picker] is not captured in that theme. Add it to the screenshot's themes() or change the card's themes().",
+    ]);
+});
+
+it('rejects an empty card template directory', function (): void {
+    $suite = ScreenshotSuite::make()
+        ->cardTemplates('  ')
+        ->cards([Awcodes\Focus\Card::make('social')]);
+
+    expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite))->toBe(['cardTemplates() must not be empty.']);
+});

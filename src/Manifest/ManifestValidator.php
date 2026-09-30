@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus\Manifest;
 
+use Awcodes\Focus\Card;
+use Awcodes\Focus\Defaults;
 use Awcodes\Focus\Enums\CaptureMode;
+use Awcodes\Focus\Enums\Theme;
 use Awcodes\Focus\Screenshot;
 use Awcodes\Focus\ScreenshotSuite;
 
@@ -19,8 +22,8 @@ final class ManifestValidator
     {
         $errors = [];
 
-        if ($suite->getScreenshots() === []) {
-            $errors[] = 'The suite does not define any screenshots.';
+        if ($suite->getScreenshots() === [] && $suite->getCards() === []) {
+            $errors[] = 'The suite does not define any screenshots or cards.';
         }
 
         if (($baseUrl = $suite->getBaseUrl()) !== null && preg_match('#^https?://#i', $baseUrl) !== 1) {
@@ -45,6 +48,79 @@ final class ManifestValidator
             $seen[$name] = true;
 
             array_push($errors, ...$this->validateScreenshot($screenshot));
+        }
+
+        if ($suite->getCards() !== []) {
+            array_push($errors, ...$this->validateCardSettings($suite));
+        }
+
+        foreach ($suite->getCards() as $card) {
+            $name = $card->getName();
+
+            if (isset($seen[$name])) {
+                $errors[] = "Duplicate name [{$name}]: screenshot and card names must be unique across the suite.";
+
+                continue;
+            }
+
+            $seen[$name] = true;
+
+            array_push($errors, ...$this->validateCard($suite, $card));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function validateCardSettings(ScreenshotSuite $suite): array
+    {
+        $errors = [];
+        $templates = $suite->getCardTemplates();
+
+        if ($templates === null) {
+            $errors[] = 'cards() requires cardTemplates(): the directory of built card templates.';
+        } elseif (trim($templates) === '') {
+            $errors[] = 'cardTemplates() must not be empty.';
+        }
+
+        if (trim($suite->getCardOutputPath()) === '') {
+            $errors[] = 'cardOutputPath() must not be empty.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function validateCard(ScreenshotSuite $suite, Card $card): array
+    {
+        $name = $card->getName();
+        $errors = [];
+
+        if (preg_match(self::NAME_PATTERN, $name) !== 1) {
+            $errors[] = "Card name [{$name}] must be lowercase kebab-case (e.g. [social]).";
+        }
+
+        $themes = $card->getThemes() ?? Defaults::CARD_THEMES;
+
+        foreach (array_unique($card->getScreenshots()) as $reference) {
+            $screenshot = $suite->findScreenshot($reference);
+
+            if (! $screenshot instanceof Screenshot) {
+                $errors[] = "Card [{$name}] uses unknown screenshot [{$reference}].";
+
+                continue;
+            }
+
+            $missing = array_udiff($themes, $suite->themesFor($screenshot), fn (Theme $a, Theme $b): int => strcmp($a->value, $b->value));
+
+            if ($missing !== []) {
+                $list = implode(', ', array_map(fn (Theme $theme): string => $theme->value, $missing));
+                $errors[] = "Card [{$name}] renders in [{$list}], but screenshot [{$reference}] is not captured in that theme. Add it to the screenshot's themes() or change the card's themes().";
+            }
         }
 
         return $errors;
