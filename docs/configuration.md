@@ -40,6 +40,14 @@ Focus validates the whole manifest before opening a browser and reports every pr
 - `padding()` or `minSize()` on a screenshot that does not use `focus()`;
 - invalid arguments, such as a negative padding or a `minSize()` width without a height.
 
+With [cards](cards/overview.md), these are also errors:
+
+- a card name that is not lowercase kebab-case, or that is already used by a screenshot or another card;
+- `cards()` without `cardTemplates()`, or a GitHub template source that cannot be parsed;
+- a card that uses a screenshot the suite does not define, or one not captured in every theme the card renders.
+
+A suite needs at least one screenshot or card, so a manifest with only cards is valid.
+
 ## Suite settings
 
 Most settings can be set on the suite for every screenshot, or on an individual screenshot:
@@ -72,6 +80,9 @@ These settings are suite-level only:
 | `reuseSession(bool)` | Reuse the previous run's signed-in session with `login()` | `true` |
 | `timeout(int)` | Timeout in milliseconds for interactions and selectors | `15000` |
 | `beforeEach(Closure)` | Callback before every screenshot | — |
+| `cards([...])` | Share images to render (see [Cards](cards/overview.md)) | none |
+| `cardTemplates(string)` | Card template directory: a path or a GitHub reference | required with `cards()` |
+| `cardOutputPath(string)` | Where cards are written | `art` |
 
 Authentication and the server are covered in [Workbench integration](workbench.md).
 
@@ -111,5 +122,7 @@ return ScreenshotSuite::make()
     ->outputPath('resources/screenshots')
     ->screenshots([...]);
 ```
+
+Cards are written to `art` by default; change it with `cardOutputPath()`.
 
 The file naming scheme, atomic writes, and orphan handling are covered in [CLI](cli.md#output-files).

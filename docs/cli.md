@@ -10,15 +10,18 @@ vendor/bin/focus [options]
 vendor/bin/focus init [--skip-browsers]
 ```
 
-Running `vendor/bin/focus` with no command generates every screenshot in the manifest. `composer focus` does the same without Composer's process timeout (see [Installation](installation.md#the-composer-script)).
+Running `vendor/bin/focus` with no command generates every screenshot and card in the manifest. `composer focus` does the same without Composer's process timeout (see [Installation](installation.md#the-composer-script)).
 
 ## Options
 
 | Option | Purpose |
 |---|---|
 | `--config=PATH`, `-c` | Manifest path. Defaults to `focus.php`. |
-| `--only=NAMES` | Only capture the named screenshots. Comma-separated or repeated. |
-| `--theme=THEME` | Only capture one theme: `light` or `dark`. |
+| `--only=NAMES` | Only generate the named screenshots or cards. Comma-separated or repeated. |
+| `--theme=THEME` | Only generate one theme: `light` or `dark`. |
+| `--cards-only` | Render cards only, without starting Workbench. |
+| `--no-cards` | Capture screenshots only. |
+| `--refresh-templates` | Download GitHub card templates again instead of using the cache. |
 | `--headed` | Show the browser while capturing. |
 | `--base-url=URL` | Use a running application instead of starting Workbench. |
 | `--prune` | Delete orphaned assets after an unfiltered run. |
@@ -37,7 +40,19 @@ vendor/bin/focus --theme=dark
 
 Filters narrow what the manifest defines; they never add captures. An unknown `--only` name is an error, so a typo does not silently capture nothing.
 
-`--list` prints each capture's theme, mode, viewport, scale, and output path, which is a quick way to check a manifest without starting a browser.
+`--list` prints each capture's theme, mode, viewport, scale, and output path, and each card's template, theme, size, pixel dimensions, and output path. It is a quick way to check a manifest without starting a browser, and it never touches the network.
+
+## Cards
+
+Cards render after the screenshots, in the same browser. A card whose screenshot failed in the run is not rendered, and is reported as `Screenshot failed`.
+
+```bash
+vendor/bin/focus --cards-only        # render cards from the screenshot files on disk
+vendor/bin/focus --only=social       # one card, from the screenshot files on disk
+vendor/bin/focus --no-cards          # screenshots only
+```
+
+When cards use screenshots the run does not capture, Focus names them once before rendering, so you know which files were used as they were. `--cards-only` does not start Workbench or sign in, so it also works in repositories without one. See [Cards](cards/overview.md).
 
 ## Headed mode
 
@@ -58,7 +73,7 @@ Each capture is written as:
 {name}-{theme}.png
 ```
 
-so `Screenshot::make('editor')` produces `docs/assets/editor-light.png` and `docs/assets/editor-dark.png`. Names contain no timestamps, hashes, or package prefix, and each run overwrites the previous files. The form `{name}-{viewport}-{theme}.png` is reserved for a future feature that captures one screenshot at several viewports, so existing names will not change.
+so `Screenshot::make('editor')` produces `docs/assets/editor-light.png` and `docs/assets/editor-dark.png`. Cards are written as `{name}-{size}-{theme}.png` in `art/` (see [Cards](cards/overview.md#output)). Names contain no timestamps, hashes, or package prefix, and each run overwrites the previous files. The form `{name}-{viewport}-{theme}.png` is reserved for a future feature that captures one screenshot at several viewports, so existing names will not change.
 
 ### Using screenshots in documentation
 
@@ -77,7 +92,7 @@ Each capture is written to a temporary file in the output directory and moved in
 
 ### Orphaned assets
 
-Renaming or removing a screenshot leaves its old files behind. After an unfiltered run, Focus lists files in the output directory that match the naming scheme (`*-light.png`, `*-dark.png`) but were not produced by the manifest.
+Renaming or removing a screenshot or card leaves its old files behind. After an unfiltered run, Focus lists files in the screenshot and card output directories that match the naming scheme (`*-light.png`, `*-dark.png`) but were not produced by the manifest. With `--cards-only` or `--no-cards`, the directory of the skipped side is not checked.
 
 To delete them:
 
@@ -90,11 +105,11 @@ Pruning never touches files that do not match the scheme, so other images in `do
 
 ## Warnings
 
-Warnings do not fail the run. Besides warnings for individual captures, Focus warns when a screenshot's light and dark images are byte-identical. That usually means the page has no dark mode, so the second file doubles the assets for nothing; restrict the screenshot with `->themes([Theme::Light])`.
+Warnings do not fail the run. Besides warnings for individual captures and cards, Focus warns when a screenshot's or card's light and dark images are byte-identical. That usually means the page has no dark mode, so the second file doubles the assets for nothing; restrict the screenshot with `->themes([Theme::Light])`.
 
 ## Exit codes
 
-Focus exits with `0` when every capture succeeds and `1` when the manifest is invalid, the server or browser cannot start, authentication fails, any capture fails, or pruning fails. One failed capture does not stop the others.
+Focus exits with `0` when every capture and card succeeds and `1` when the manifest is invalid, the server or browser cannot start, authentication fails, a card template cannot be found or downloaded, any capture or card fails, or pruning fails. One failed capture or card does not stop the others.
 
 ## Reading a failure
 
