@@ -7,6 +7,7 @@ namespace Awcodes\Focus\Runtime;
 use Awcodes\Focus\Authentication\FormLogin;
 use Awcodes\Focus\Authentication\SessionCache;
 use Awcodes\Focus\Capture;
+use Awcodes\Focus\CardRender;
 use Awcodes\Focus\Enums\CaptureMode;
 use Awcodes\Focus\Enums\FailureReason;
 use Awcodes\Focus\Exceptions\CaptureException;
@@ -15,6 +16,7 @@ use Awcodes\Focus\Steps\Click;
 use Awcodes\Focus\Steps\Hover;
 use Awcodes\Focus\Steps\InFrame;
 use Awcodes\Focus\Steps\Step;
+use Awcodes\Focus\Support\TemplateDirectory;
 use Closure;
 use DateTimeImmutable;
 use Playwright\Browser\BrowserContextInterface;
@@ -66,6 +68,28 @@ final readonly class Runner
             }
 
             return $results;
+        } finally {
+            try {
+                $client->close();
+            } catch (Throwable) {
+                // The browser process may already be gone; there is nothing left to clean up.
+            }
+        }
+    }
+
+    /**
+     * @param  list<CardRender>  $renders
+     * @return list<CardResult>
+     */
+    public function runCards(ScreenshotSuite $suite, array $renders, TemplateDirectory $templates, bool $headed = false): array
+    {
+        $client = $this->client($headed, $suite->getTimeout());
+
+        try {
+            $browser = $this->launch($client, $headed);
+            $renderer = new CardRenderer($templates, $suite->getTimeout());
+
+            return array_map(fn (CardRender $render): CardResult => $renderer->render($browser, $render), $renders);
         } finally {
             try {
                 $client->close();

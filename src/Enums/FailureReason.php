@@ -14,6 +14,7 @@ enum FailureReason: string
     case SelectorHidden = 'Selector hidden';
     case Timeout = 'Timed out';
     case Callback = 'Callback failed';
+    case Template = 'Template error';
     case Output = 'Could not write output';
     case Browser = 'Browser error';
 }
