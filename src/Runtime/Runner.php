@@ -53,21 +53,65 @@ final readonly class Runner
      */
     public function run(ScreenshotSuite $suite, array $captures, string $baseUrl, bool $headed = false): array
     {
+        return $this->runAll($suite, $captures, $baseUrl, [], null, $headed)->captures;
+    }
+
+    /**
+     * @param  list<CardRender>  $renders
+     * @return list<CardResult>
+     */
+    public function runCards(ScreenshotSuite $suite, array $renders, TemplateDirectory $templates, bool $headed = false): array
+    {
+        return $this->runAll($suite, [], null, $renders, $templates, $headed)->cards;
+    }
+
+    /**
+     * Capture screenshots, then render cards, in one browser. A card is not rendered when a screenshot it uses failed
+     * in this run, so it is never composed from a stale image and reported as fresh.
+     *
+     * @param  list<Capture>  $captures
+     * @param  list<CardRender>  $renders
+     */
+    public function runAll(ScreenshotSuite $suite, array $captures, ?string $baseUrl, array $renders, ?TemplateDirectory $templates, bool $headed = false): RunResults
+    {
+        if ($captures !== [] && $baseUrl === null) {
+            throw new CaptureException(FailureReason::WorkbenchUnavailable, 'Screenshots need a base URL.');
+        }
+
+        if ($renders !== [] && ! $templates instanceof TemplateDirectory) {
+            throw new CaptureException(FailureReason::Template, 'Cards need a template directory.');
+        }
+
         $client = $this->client($headed, $suite->getTimeout());
 
         try {
             $browser = $this->launch($client, $headed);
-            $storageState = $this->authenticate($browser, $suite, $baseUrl);
+            $captureResults = [];
 
-            $results = [];
+            if ($captures !== []) {
+                $storageState = $this->authenticate($browser, $suite, (string) $baseUrl);
 
-            foreach ($captures as $capture) {
-                $this->observer?->captureStarting($capture);
-                $results[] = $result = $this->capture($browser, $suite, $capture, $baseUrl, $storageState);
-                $this->observer?->captureFinished($result);
+                foreach ($captures as $capture) {
+                    $this->observer?->captureStarting($capture);
+                    $captureResults[] = $result = $this->capture($browser, $suite, $capture, (string) $baseUrl, $storageState);
+                    $this->observer?->captureFinished($result);
+                }
             }
 
-            return $results;
+            $cardResults = [];
+
+            if ($renders !== [] && $templates instanceof TemplateDirectory) {
+                $renderer = new CardRenderer($templates, $suite->getTimeout());
+                $failed = $this->failedScreenshots($captureResults);
+
+                foreach ($renders as $render) {
+                    $this->observer?->cardStarting($render);
+                    $cardResults[] = $result = $this->renderCard($renderer, $browser, $render, $failed);
+                    $this->observer?->cardFinished($result);
+                }
+            }
+
+            return new RunResults($captureResults, $cardResults);
         } finally {
             try {
                 $client->close();
@@ -78,25 +122,29 @@ final readonly class Runner
     }
 
     /**
-     * @param  list<CardRender>  $renders
-     * @return list<CardResult>
+     * @param  list<string>  $failed  screenshots that failed in this run
      */
-    public function runCards(ScreenshotSuite $suite, array $renders, TemplateDirectory $templates, bool $headed = false): array
+    private function renderCard(CardRenderer $renderer, BrowserInterface $browser, CardRender $render, array $failed): CardResult
     {
-        $client = $this->client($headed, $suite->getTimeout());
-
-        try {
-            $browser = $this->launch($client, $headed);
-            $renderer = new CardRenderer($templates, $suite->getTimeout());
-
-            return array_map(fn (CardRender $render): CardResult => $renderer->render($browser, $render), $renders);
-        } finally {
-            try {
-                $client->close();
-            } catch (Throwable) {
-                // The browser process may already be gone; there is nothing left to clean up.
-            }
+        if ($broken = array_values(array_unique(array_intersect($render->card->getScreenshots(), $failed)))) {
+            return new CardResult($render, new CaptureException(
+                FailureReason::Dependency,
+                'Not rendered: screenshot(s) ' . implode(', ', $broken) . ' failed in this run.',
+            ), [], 0.0);
         }
+
+        return $renderer->render($browser, $render);
+    }
+
+    /**
+     * @param  list<CaptureResult>  $results
+     * @return list<string>
+     */
+    private function failedScreenshots(array $results): array
+    {
+        $failed = array_filter($results, fn (CaptureResult $result): bool => ! $result->succeeded());
+
+        return array_values(array_unique(array_map(fn (CaptureResult $result): string => $result->capture->name(), $failed)));
     }
 
     private function client(bool $headed, int $timeout): PlaywrightClient
