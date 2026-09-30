@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Awcodes\Focus;
 
+use Awcodes\Focus\Enums\Size;
 use Awcodes\Focus\Enums\Theme;
 use Awcodes\Focus\Enums\Viewport;
 
@@ -35,4 +36,15 @@ final class Defaults
     public const TIMEOUT = 15_000;
 
     public const KEEP_INTERACTION_STATE = false;
+
+    public const CARD_OUTPUT_PATH = 'art';
+
+    public const CARD_TEMPLATE = 'default';
+
+    /**
+     * Sharing surfaces show one image regardless of color scheme, so cards render dark only unless asked.
+     */
+    public const CARD_THEMES = [Theme::Dark];
+
+    public const CARD_SIZES = [Size::OpenGraph];
 }
