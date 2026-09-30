@@ -9,6 +9,8 @@ Any tool that produces static HTML can build card templates. This page uses [Ast
 
 Keep templates in their own repository when several packages share them. Each package then points `cardTemplates()` at that repository on GitHub (see [Template sources](sources.md)).
 
+[awcodes/focus-templates](https://github.com/awcodes/focus-templates) is a complete example built this way: a shared layout, templates at two canvases (2560×1440 for 16:9 and 2400×1260 for Open Graph and GitHub), bundled fonts, and a committed `dist/`. It holds the awcodes brand, so use it as a reference rather than as your own templates.
+
 ## Set up
 
 ```bash

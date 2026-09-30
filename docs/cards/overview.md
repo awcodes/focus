@@ -13,7 +13,7 @@ Cards are optional. A manifest without `cards()` works exactly as before.
 
 ## Quick start
 
-Cards need a directory of templates: HTML pages with `data-focus` attributes where the values go. See [Templates](templates.md) for the format and [Building templates with Astro](astro.md) for a template repository.
+Cards need a directory of templates: HTML pages with `data-focus` attributes where the values go. See [Templates](templates.md) for the format and [Building templates with Astro](astro.md) for a template repository; [awcodes/focus-templates](https://github.com/awcodes/focus-templates) is a complete example.
 
 ```php
 <?php

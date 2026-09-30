@@ -22,7 +22,7 @@ A relative path is resolved from the repository root. The directory is used as i
 ->cardTemplates('github:acme/card-templates/dist@v1.0.0')
 ```
 
-Both forms mean the `dist` directory of `acme/card-templates` at the `v1.0.0` tag. The ref can be a tag, a branch, or a full 40-character commit SHA. Leave out the path to use the repository root:
+Both forms mean the `dist` directory of `acme/card-templates` at the `v1.0.0` tag. For a working example, `https://github.com/awcodes/focus-templates/tree/v1.0.0/dist` loads the awcodes templates. The ref can be a tag, a branch, or a full 40-character commit SHA. Leave out the path to use the repository root:
 
 ```php
 ->cardTemplates('github:acme/card-templates@v1.0.0')
