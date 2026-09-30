@@ -9,6 +9,8 @@ use Awcodes\Focus\Enums\FailureReason;
 use Awcodes\Focus\Enums\Theme;
 use Awcodes\Focus\Exceptions\CaptureException;
 use Awcodes\Focus\Exceptions\FocusException;
+use Awcodes\Focus\Support\CardFrame;
+use Awcodes\Focus\Support\TemplateCanvas;
 use Awcodes\Focus\Support\TemplateDirectory;
 use DateTimeImmutable;
 use Playwright\Browser\BrowserContextInterface;
@@ -65,11 +67,12 @@ final readonly class CardRenderer
 
         try {
             $entry = $this->templates->find($render->template);
+            $frame = CardFrame::for($render->size, $render->scale, TemplateCanvas::read((string) file_get_contents($entry)));
             [$screenshots, $files, $missing] = $this->screenshots($render);
 
             $context = $browser->newContext([
-                'viewport' => ['width' => $render->size->width(), 'height' => $render->size->height()],
-                'deviceScaleFactor' => $render->scale,
+                'viewport' => ['width' => $frame->viewportWidth, 'height' => $frame->viewportHeight],
+                'deviceScaleFactor' => $frame->deviceScaleFactor,
                 'colorScheme' => $render->theme->value,
                 'reducedMotion' => 'reduce',
                 'locale' => $render->locale,
@@ -110,14 +113,19 @@ final readonly class CardRenderer
             array_push($warnings, ...$this->unused($render, $report), ...$requests->warnings());
 
             if ($report['width'] > $report['viewportWidth'] || $report['height'] > $report['viewportHeight']) {
-                $warnings[] = "The template is {$report['width']}x{$report['height']}, larger than the {$report['viewportWidth']}x{$report['viewportHeight']} card, so content overflows. Long text is the usual cause.";
+                $warnings[] = "The template is {$report['width']}x{$report['height']}, larger than its {$report['viewportWidth']}x{$report['viewportHeight']} " . ($frame->clip === null ? 'card' : 'canvas') . ', so content overflows. Long text is the usual cause.';
             }
 
-            AssetWriter::write($render->path, fn (string $path): string => $page->screenshot($path, [
+            if ($frame->warning !== null) {
+                $warnings[] = $frame->warning;
+            }
+
+            AssetWriter::write($render->path, fn (string $path): string => $page->screenshot($path, array_filter([
                 'animations' => 'disabled',
                 'caret' => 'hide',
                 'scale' => 'device',
-            ]));
+                'clip' => $frame->clip,
+            ])));
 
             return new CardResult($render, null, $warnings, microtime(true) - $started);
         } catch (Throwable $e) {
