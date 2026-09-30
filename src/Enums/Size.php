@@ -7,7 +7,7 @@ namespace Awcodes\Focus\Enums;
 use Awcodes\Focus\Contracts\HasDimensions;
 
 /**
- * Minimum crop presets for common sharing surfaces, in logical (CSS) pixels.
+ * Sizes of common sharing surfaces, in logical (CSS) pixels, for card sizes and minimum crops.
  */
 enum Size: string implements HasDimensions
 {
@@ -15,12 +15,14 @@ enum Size: string implements HasDimensions
     case Twitter = 'twitter';
     case YouTube = 'youtube';
     case GitHubSocial = 'github-social';
+    case Filament = 'filament';
 
     public function width(): int
     {
         return match ($this) {
             self::OpenGraph, self::Twitter => 1200,
             self::YouTube, self::GitHubSocial => 1280,
+            self::Filament => 2560,
         };
     }
 
@@ -31,6 +33,7 @@ enum Size: string implements HasDimensions
             self::Twitter => 675,
             self::YouTube => 720,
             self::GitHubSocial => 640,
+            self::Filament => 1440,
         };
     }
 }

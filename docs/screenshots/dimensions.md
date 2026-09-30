@@ -61,6 +61,7 @@ Focus ships these presets in `Awcodes\Focus\Enums\Size`:
 | `Size::Twitter` | 1200×675 |
 | `Size::YouTube` | 1280×720 |
 | `Size::GitHubSocial` | 1280×640 |
+| `Size::Filament` | 2560×1440 |
 
 ## Scale
 
