@@ -59,6 +59,7 @@ it('expands every theme and size', function (): void {
 
 it('names sizes by preset value or dimensions', function (): void {
     expect(CardRender::sizeSegment(Size::GitHubSocial))->toBe('github-social')
+        ->and(CardRender::sizeSegment(Size::Filament))->toBe('filament')
         ->and(CardRender::sizeSegment(Viewport::Mobile))->toBe('mobile')
         ->and(CardRender::sizeSegment(new Dimensions(1920, 1080)))->toBe('1920x1080')
         ->and(CardRender::filename('social', Size::Twitter, Theme::Light))->toBe('social-twitter-light.png');
