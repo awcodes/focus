@@ -21,8 +21,7 @@ enum Size: string implements HasDimensions
     {
         return match ($this) {
             self::OpenGraph, self::Twitter => 1200,
-            self::YouTube, self::GitHubSocial => 1280,
-            self::Filament => 2560,
+            self::YouTube, self::GitHubSocial, self::Filament => 1280,
         };
     }
 
@@ -31,9 +30,8 @@ enum Size: string implements HasDimensions
         return match ($this) {
             self::OpenGraph => 630,
             self::Twitter => 675,
-            self::YouTube => 720,
+            self::YouTube, self::Filament => 720,
             self::GitHubSocial => 640,
-            self::Filament => 1440,
         };
     }
 }
