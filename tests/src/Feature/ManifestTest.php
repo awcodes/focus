@@ -98,3 +98,12 @@ it('rejects an empty card template directory', function (): void {
 
     expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite))->toBe(['cardTemplates() must not be empty.']);
 });
+
+it('rejects a malformed GitHub template source', function (): void {
+    $suite = ScreenshotSuite::make()
+        ->cardTemplates('https://github.com/awcodes/focus-templates')
+        ->cards([Awcodes\Focus\Card::make('social')]);
+
+    expect((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite))->toHaveCount(1)
+        ->and((new Awcodes\Focus\Manifest\ManifestValidator)->validate($suite)[0])->toContain('could not parse the GitHub reference');
+});

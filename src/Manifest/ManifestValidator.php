@@ -8,8 +8,10 @@ use Awcodes\Focus\Card;
 use Awcodes\Focus\Defaults;
 use Awcodes\Focus\Enums\CaptureMode;
 use Awcodes\Focus\Enums\Theme;
+use Awcodes\Focus\Exceptions\FocusException;
 use Awcodes\Focus\Screenshot;
 use Awcodes\Focus\ScreenshotSuite;
+use Awcodes\Focus\Templates\GitHubReference;
 
 final class ManifestValidator
 {
@@ -83,6 +85,12 @@ final class ManifestValidator
             $errors[] = 'cards() requires cardTemplates(): the directory of built card templates.';
         } elseif (trim($templates) === '') {
             $errors[] = 'cardTemplates() must not be empty.';
+        } elseif (GitHubReference::isGitHub($templates)) {
+            try {
+                GitHubReference::parse($templates);
+            } catch (FocusException $e) {
+                $errors[] = $e->getMessage();
+            }
         }
 
         if (trim($suite->getCardOutputPath()) === '') {

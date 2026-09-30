@@ -101,7 +101,8 @@ class ScreenshotSuite
     }
 
     /**
-     * The directory of built card templates: a path relative to the repository root, or absolute.
+     * The directory of built card templates: a path relative to the repository root, an absolute path, or a GitHub
+     * reference such as `https://github.com/{owner}/{repo}/tree/{ref}/{path}` or `github:{owner}/{repo}/{path}@{ref}`.
      */
     public function cardTemplates(string $path): static
     {
@@ -387,14 +388,6 @@ class ScreenshotSuite
     public function resolveCardOutputDirectory(string $rootPath): string
     {
         return $this->resolvePath($rootPath, $this->getCardOutputPath());
-    }
-
-    /**
-     * The local template directory, or null when none is configured.
-     */
-    public function resolveCardTemplatesDirectory(string $rootPath): ?string
-    {
-        return $this->cardTemplates === null ? null : $this->resolvePath($rootPath, $this->cardTemplates);
     }
 
     /**

@@ -156,9 +156,3 @@ it('rejects unknown names passed to --only', function (): void {
         ->cards([Card::make('social')->title('Mason')])
         ->planCards('/repo', ['social', 'nope']);
 })->throws(FocusException::class, 'Unknown screenshot(s) or card(s) passed to --only: nope.');
-
-it('resolves the template directory against the repository root', function (): void {
-    expect(ScreenshotSuite::make()->resolveCardTemplatesDirectory('/repo'))->toBeNull()
-        ->and(ScreenshotSuite::make()->cardTemplates('../templates/dist/')->resolveCardTemplatesDirectory('/repo'))->toBe('/repo/../templates/dist')
-        ->and(ScreenshotSuite::make()->cardTemplates('/srv/templates')->resolveCardTemplatesDirectory('/repo'))->toBe('/srv/templates');
-});
