@@ -122,7 +122,7 @@ A template can also show both variants in one image with `screenshot.1.light` an
 
 Documentation screenshots are framed around their subject, so their shapes vary: a popover is tall, an editor is wide. A template's screenshot slot has a fixed shape, and a screenshot of a very different shape is cropped heavily to fill it.
 
-For the best cards, capture screenshots for the card itself. Use the same subject, set `minSize()` to the slot's size so the crop grows around it to that shape, and capture dark only:
+For the best cards, capture screenshots for the card itself. Use the same subject, set `minSize()` to the slot's size so the crop grows around it to that shape, and capture only the themes your template uses (cards render dark by default):
 
 ```php
 Screenshot::make('card-editor')
@@ -133,6 +133,20 @@ Screenshot::make('card-editor')
 ```
 
 With a template whose slot is 1400×816, this capture fills it exactly.
+
+### Small subjects
+
+A small subject, such as a widget of a few tiles, is lost in a slot-sized capture: the crop grows to 1400×816 around it, and the subject ends up small in a mostly empty frame. Capture it in the slot's shape at a smaller size instead, and let the template scale it up. At the default scale of 2, a half-size capture is still the slot's full pixel size, so it stays sharp:
+
+```php
+Screenshot::make('card-widget')
+    ->viewportSize(1050, 612)
+    ->visit('/admin')
+    ->focus('#overview-widget')
+    ->minSize(700, 408),
+```
+
+`minSize()` only grows a crop; it never narrows one. An element that spans the full width of the page, as many widgets do, stays wider than the slot's shape at any minimum size. A narrower viewport narrows the element with the page, so the crop comes out close to the slot's shape. Keep the viewport wide enough for the layout you want to show; Filament collapses its sidebar below 1024px.
 
 ## Card settings
 
