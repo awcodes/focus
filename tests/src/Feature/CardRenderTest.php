@@ -274,7 +274,7 @@ it('warns about unused values, unused screenshots, and overflow', function (): v
         ->and($result->warnings)->toBe([
             'with() value [tagline] is not used by template [default].',
             'Screenshot [editor] (screenshot.1) is not used by template [default].',
-            'The template is 1200x2000, larger than the 1200x630 card, so content overflows. Long text is the usual cause.',
+            'The template is 1200x2000, larger than its 1200x630 card, so content overflows. Long text is the usual cause.',
         ]);
 });
 
@@ -297,4 +297,35 @@ it('fails a card whose template is missing', function (): void {
 
     expect($result->error?->reason)->toBe(FailureReason::Template)
         ->and($result->error?->getMessage())->toContain('Card template [nope] not found');
+});
+
+it('shrinks a fixed canvas to each size, exactly', function (): void {
+    // A 2560x1440 canvas with a 100px magenta band at the top. At 2:1 the crop removes 80px from the top and bottom,
+    // and GitHub social at scale 2 is drawn at 1x, so 20px of the band remains.
+    $templates = cardTemplates([
+        'fixed.html' => cardPage(
+            '<div style="width: 2560px; height: 1440px; position: relative"><div style="position: absolute; inset: 0 0 auto 0; height: 100px; background: rgb(255, 0, 255)"></div></div>',
+            '<meta name="focus:canvas" content="2560x1440">',
+        ),
+    ]);
+
+    [$results, $root] = renderCards($templates, Card::make('fixed')->template('fixed')->sizes([
+        Awcodes\Focus\Enums\Size::OpenGraph,
+        Awcodes\Focus\Enums\Size::GitHubSocial,
+        Awcodes\Focus\Enums\Size::Twitter,
+        [1920, 1080],
+        [450, 253],
+    ]));
+
+    $dimensions = array_map(fn (CardResult $result): string => implode('x', array_slice(getimagesize($result->render->path), 0, 2)), $results);
+
+    expect(array_map(fn (CardResult $result) => $result->error, $results))->each->toBeNull()
+        ->and($dimensions)->toBe(['2400x1260', '2560x1280', '2400x1350', '3840x2160', '900x506'])
+        // At scale 2, 1920x1080 is drawn at 1.5x, so the 100px band covers 150px.
+        ->and(pixel("{$root}/art/fixed-1920x1080-dark.png", 10, 140))->toBe([255, 0, 255])
+        ->and(pixel("{$root}/art/fixed-1920x1080-dark.png", 10, 160))->toBe([0, 128, 0])
+        ->and(pixel("{$root}/art/fixed-github-social-dark.png", 10, 10))->toBe([255, 0, 255])
+        ->and(pixel("{$root}/art/fixed-github-social-dark.png", 10, 30))->toBe([0, 128, 0])
+        ->and($results[1]->warnings)->toBe(['The 2560x1440 template was cropped to fit 1280x640: 80px from the top and bottom. Keep important content away from those edges.'])
+        ->and($results[3]->warnings)->toBe([]);
 });
