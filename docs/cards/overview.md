@@ -94,21 +94,15 @@ Values come from `composer.json`, not from GitHub, so cards render offline and t
 Card::make('social')->sizes([Size::OpenGraph, Size::GitHubSocial, [1920, 1080]]);
 ```
 
-| Preset | Size |
-|---|---|
-| `Size::OpenGraph` | 1200×630 |
-| `Size::Twitter` | 1200×675 |
-| `Size::YouTube` | 1280×720 |
-| `Size::GitHubSocial` | 1280×640 |
-| `Size::Filament` | 2560×1440 |
+| Preset | Size | Image at the default scale |
+|---|---|---|
+| `Size::OpenGraph` | 1200×630 | 2400×1260 |
+| `Size::Twitter` | 1200×675 | 2400×1350 |
+| `Size::YouTube` | 1280×720 | 2560×1440 |
+| `Size::GitHubSocial` | 1280×640 | 2560×1280 |
+| `Size::Filament` | 1280×720 | 2560×1440, the Filament plugin directory's thumbnail size |
 
-The default is `[Size::OpenGraph]`. The image is `size × scale` pixels, and `scale()` defaults to `2`, so an Open Graph card is 2400×1260.
-
-`Size::Filament` is the thumbnail size the Filament plugin directory uses, and it is already full resolution. Give a Filament card `->scale(1)` for an image of exactly 2560×1440; at the default scale it is 5120×2880:
-
-```php
-Card::make('filament')->template('two-up')->sizes([Size::Filament])->scale(1),
-```
+The default is `[Size::OpenGraph]`. Sizes are CSS pixels, and the image is `size × scale` pixels with `scale()` defaulting to `2`.
 
 A template designed for one aspect ratio is cropped to fit another. Keep one template per aspect ratio you publish; see [Fixed canvases](templates.md#fixed-canvases).
 
