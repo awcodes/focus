@@ -267,4 +267,105 @@ final class Scripts
             }
             JS;
     }
+
+    /**
+     * Fill a card template's `data-focus` elements once the DOM is parsed, before its images load. Runs in the top frame
+     * only. Values are set as text, never parsed as HTML. What the template asked for is recorded in `window.__focusCard`.
+     *
+     * @param  array{theme: string, size: string, values: array<string, string>, screenshots: array<string, string>, missing: array<string, string>}  $config
+     */
+    public static function cardInit(array $config): string
+    {
+        $config = json_encode($config, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_FORCE_OBJECT);
+
+        return <<<JS
+            (() => {
+                if (window !== window.top) return;
+
+                const config = {$config};
+                const report = window.__focusCard = { used: [], unknown: [], invalid: [], missing: [] };
+                const has = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+                const note = (list, item) => { if (! list.includes(item)) list.push(item); };
+
+                const apply = () => {
+                    const root = document.documentElement;
+
+                    root.dataset.focusTheme = config.theme;
+                    root.dataset.focusSize = config.size;
+
+                    for (const [key, url] of Object.entries(config.screenshots)) {
+                        root.style.setProperty('--focus-' + key.replaceAll('.', '-'), 'url("' + url + '")');
+                    }
+
+                    for (const element of document.querySelectorAll('[data-focus]')) {
+                        const key = element.dataset.focus.trim();
+
+                        note(report.used, key);
+
+                        if (has(config.missing, key)) {
+                            note(report.missing, config.missing[key]);
+                        } else if (has(config.screenshots, key)) {
+                            if (! (element instanceof HTMLImageElement)) {
+                                note(report.invalid, key + ' on <' + element.tagName.toLowerCase() + '>');
+                                continue;
+                            }
+
+                            // A <picture>'s <source> elements would win over the injected src.
+                            if (element.parentElement instanceof HTMLPictureElement) {
+                                element.parentElement.querySelectorAll('source').forEach((source) => source.remove());
+                            }
+
+                            element.removeAttribute('srcset');
+                            element.removeAttribute('sizes');
+                            element.src = config.screenshots[key];
+                        } else if (has(config.values, key)) {
+                            element.textContent = config.values[key];
+                        } else {
+                            note(report.unknown, key);
+                        }
+                    }
+                };
+
+                document.addEventListener('DOMContentLoaded', apply, { once: true, capture: true });
+            })();
+            JS;
+    }
+
+    /**
+     * The injection report, which screenshot slots stylesheets reference through `--focus-screenshot-N`,
+     * and whether the page overflows the viewport.
+     */
+    public static function cardReport(): string
+    {
+        return <<<'JS'
+            (slots) => {
+                // Head and body only: the root element's style holds the injected variables themselves.
+                let css = (document.head ? document.head.outerHTML : '') + (document.body ? document.body.outerHTML : '');
+
+                for (const sheet of document.styleSheets) {
+                    try {
+                        for (const rule of sheet.cssRules) css += rule.cssText;
+                    } catch (e) {}
+                }
+
+                const cssSlots = [];
+
+                for (let slot = 1; slot <= slots; slot++) {
+                    if (new RegExp('--focus-screenshot-' + slot + '(?![0-9])').test(css)) cssSlots.push(slot);
+                }
+
+                const doc = document.documentElement;
+                const body = document.body || doc;
+
+                return {
+                    ...(window.__focusCard || { used: [], unknown: [], invalid: [], missing: [] }),
+                    cssSlots,
+                    width: Math.max(doc.scrollWidth, body.scrollWidth),
+                    height: Math.max(doc.scrollHeight, body.scrollHeight),
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                };
+            }
+            JS;
+    }
 }
