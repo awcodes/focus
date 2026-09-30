@@ -35,9 +35,11 @@ composer focus
 
 This writes `docs/assets/editor-light.png` and `docs/assets/editor-dark.png`.
 
+Focus can also render share images, such as Open Graph cards and GitHub social previews, from HTML templates and the screenshots it captures. See [Cards](docs/cards/overview.md).
+
 ## Documentation
 
-Full documentation lives in [`docs/`](docs/index.md): installation, configuration, capture modes, interactions, Workbench integration, the CLI, and troubleshooting.
+Full documentation lives in [`docs/`](docs/index.md): installation, configuration, capture modes, interactions, Workbench integration, cards, the CLI, and troubleshooting.
 
 ## Development
 

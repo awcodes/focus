@@ -9,6 +9,8 @@ Focus is a development tool that generates documentation screenshots from the La
 
 Screenshots are durable documentation assets, not test artifacts. The same manifest produces the same files every time, so regenerating them after a UI change gives you a meaningful diff.
 
+Focus can also render [cards](cards/overview.md): share images, such as Open Graph cards and GitHub social previews, built from HTML templates and the screenshots captured in the same run.
+
 ## Quick start
 
 Install Focus as a development dependency and scaffold the repository:
@@ -113,3 +115,4 @@ return ScreenshotSuite::make()
 - [Capture modes](screenshots/capture-modes.md): `focus()`, `viewport()`, and `fullPage()`.
 - [Workbench integration](workbench.md): selectors, fixtures, authentication, and the server.
 - [CLI](cli.md): options, filtering, and output files.
+- [Cards](cards/overview.md): share images from templates and screenshots.

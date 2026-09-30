@@ -14,6 +14,13 @@ navigation:
       - screenshots/interactions
       - screenshots/themes-and-stability
 
+  - label: Cards
+    children:
+      - cards/overview
+      - cards/templates
+      - cards/astro
+      - cards/sources
+
   - workbench
   - cli
   - troubleshooting

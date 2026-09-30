@@ -56,6 +56,35 @@ Playwright or Chromium failed.
 
 - **"Could not start Playwright"** or **"Could not launch Chromium"**: the Playwright server or browser is not installed, which is normal after a fresh `composer install`. Run `vendor/bin/focus init` or `vendor/bin/playwright-install chromium`. Focus needs Node.js 20 or later.
 
+## Template error
+
+A card could not be rendered from its template. The message lists every problem:
+
+- **"Card template [name] not found"**: the template directory has neither `name.html` nor `name/index.html`. Check the name against the built files, and rebuild the templates if the page is new.
+- **"[key] is not a value this card provides"**: the template has a `data-focus` key the card does not supply. Fix the typo, or pass the value with `->with(['key' => '…'])`.
+- **"the card passes 1 screenshot, so there is no screenshot 2"**: the template has more screenshot slots than the card's `screenshots()`.
+- **"screenshot keys only work on <img>"**: use an `<img>`, or the `--focus-screenshot-N` CSS variables for backgrounds.
+- **"screenshot [name] has no dark capture at …"**: the card uses a screenshot file that does not exist yet, usually in a `--cards-only` or `--only` run. Run the screenshot first.
+- **"The focus:canvas meta tag must look like …"**: the canvas must be `{width}x{height}`, such as `2400x1260`.
+
+See [Card templates](cards/templates.md).
+
+## Screenshot failed
+
+A card was not rendered because a screenshot it uses failed in the same run. Fix the screenshot; its failure is reported above the card.
+
+## Card templates cannot be loaded
+
+The run stops before any browser starts.
+
+- **"has no tag or branch named"**: the ref in the GitHub reference does not exist. Check the tag was pushed.
+- **"was not found. If it is private, set GITHUB_TOKEN"**: the repository does not exist, or it is private and no token is set.
+- **"is not in the … archive"**: the directory is not in the downloaded repository. Check it is committed at that ref and not marked `export-ignore` in `.gitattributes`.
+- **"Could not resolve … No cached copy is available"**: GitHub could not be reached and the templates have never been downloaded. Run again with network access once.
+- **"needs git on PATH"**: install git, or pin the reference to a full commit SHA.
+
+See [Template sources](cards/sources.md).
+
 ## Could not write output
 
 Focus could not create the output directory or move the finished file into place. Check the `outputPath()` directory is writable.
@@ -68,6 +97,12 @@ Warnings do not fail a capture, but they are worth reading:
 - **"The subject or the minimum size is larger than the document"**: the subject or `minSize()` is bigger than the page, so the capture is smaller than requested.
 - **"Images were still loading … before capture"**: an image, often a remote one such as an avatar, did not finish loading within ten seconds. `hide()` or `mask()` it, or check the network.
 - **"Every theme produced an identical image"**: the page has no dark mode. Restrict it with `->themes([Theme::Light])`.
+- **"The template was cropped to fit …"**: the card's aspect ratio differs from the template's canvas. Keep content away from the named edges, or use a template designed for that ratio; see [Fixed canvases](cards/templates.md#fixed-canvases).
+- **"content overflows"**: the template is larger than its canvas or card, usually because of a long title or description.
+- **"Blocked a request outside the template directory"**: the template loads something from the network, such as a web font. Bundle it with the template.
+- **"The template requested …, which is not in the template directory"**: a broken asset path in the template.
+- **"is not used by template"**: a `with()` value or screenshot the template never shows.
+- **"Card templates follow the … branch"**: the GitHub reference is a branch, so cards can change without warning. Pin a tag or commit.
 
 ## Screenshots look wrong
 
