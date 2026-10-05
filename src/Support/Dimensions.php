@@ -8,6 +8,9 @@ use Awcodes\Focus\Contracts\HasDimensions;
 use InvalidArgumentException;
 use Stringable;
 
+/**
+ * @internal
+ */
 final readonly class Dimensions implements HasDimensions, Stringable
 {
     public function __construct(

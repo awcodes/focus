@@ -11,6 +11,8 @@ use JsonException;
  * rate limits. Only form logins use it; a stale session is harmless because FormLogin verifies it first.
  *
  * Stored in the system temp directory, never in the repository.
+ *
+ * @internal
  */
 final readonly class SessionCache
 {

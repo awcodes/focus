@@ -11,13 +11,15 @@ use Awcodes\Focus\Contracts\HasDimensions;
  * device scale factor that makes it cover the card, then the centre is clipped to the card's aspect ratio. Chromium
  * draws at the output resolution, so nothing is resampled afterwards. A template without a canvas is laid out at the
  * card size itself.
+ *
+ * @internal
  */
 final readonly class CardFrame
 {
     /**
      * Cropping less than this share of the canvas in either direction is not worth a warning.
      */
-    private const CROP_TOLERANCE = 0.01;
+    private const float CROP_TOLERANCE = 0.01;
 
     /**
      * @param  array{x: float, y: float, width: float, height: float}|null  $clip  in CSS pixels

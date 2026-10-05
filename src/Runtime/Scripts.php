@@ -9,16 +9,18 @@ use Awcodes\Focus\Enums\Theme;
 /**
  * JavaScript evaluated in the browser. Kept framework-agnostic: the Filament-specific pieces
  * (the `theme` localStorage key) are harmless in any other application.
+ *
+ * @internal
  */
 final class Scripts
 {
-    public const STYLE_ID = 'focus-stabilize';
+    public const string STYLE_ID = 'focus-stabilize';
 
-    public const MASK_TAG = 'focus-mask';
+    public const string MASK_TAG = 'focus-mask';
 
-    public const HIDE_STYLE_ID = 'focus-hide';
+    public const string HIDE_STYLE_ID = 'focus-hide';
 
-    private const STABILIZE_CSS = <<<'CSS'
+    private const string STABILIZE_CSS = <<<'CSS'
         *, *::before, *::after {
             animation-delay: 0s !important;
             animation-duration: 0s !important;

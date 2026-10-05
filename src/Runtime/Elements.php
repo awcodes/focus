@@ -10,6 +10,9 @@ use Playwright\Exception\PlaywrightExceptionInterface;
 use Playwright\Locator\LocatorInterface;
 use Playwright\Page\PageInterface;
 
+/**
+ * @internal
+ */
 final class Elements
 {
     /**

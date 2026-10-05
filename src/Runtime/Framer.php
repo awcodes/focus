@@ -8,6 +8,8 @@ use Awcodes\Focus\Contracts\HasDimensions;
 
 /**
  * Computes the crop around a focus subject. All values are CSS pixels in document coordinates.
+ *
+ * @internal
  */
 final class Framer
 {

@@ -34,7 +34,7 @@ jobs:
   ci:
     uses: awcodes/.github/.github/workflows/php-library.yml@ad63f1536b965fed92274516cb81f172b1d60e1a # v1.4.3
     with:
-      # composer.json allows PHP 8.2, but like the rest of the fleet CI starts at 8.3.
+      # PHP 8.3 is the floor in composer.json.
       # The prefer-lowest row keeps the wide constraints honest (symfony/process 6.4,
       # playwright-php 1.5, Pest 3); it was resolved and run locally before being added.
       matrix: |

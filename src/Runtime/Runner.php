@@ -28,19 +28,22 @@ use Playwright\PlaywrightClient;
 use Playwright\PlaywrightFactory;
 use Throwable;
 
+/**
+ * @internal
+ */
 final readonly class Runner
 {
     /**
      * Consecutive animation frames with no DOM or network activity before the UI counts as settled.
      */
-    public const QUIET_FRAMES = 6;
+    public const int QUIET_FRAMES = 6;
 
-    public const READY_TIMEOUT = 10_000;
+    public const int READY_TIMEOUT = 10_000;
 
-    public const INSTALL_HINT = 'Run `vendor/bin/focus init` (or `vendor/bin/playwright-install chromium`) to install the Playwright server and browser.';
+    public const string INSTALL_HINT = 'Run `vendor/bin/focus init` (or `vendor/bin/playwright-install chromium`) to install the Playwright server and browser.';
 
     /** @var array{width: int, height: int} */
-    private const AUTH_VIEWPORT = ['width' => 1440, 'height' => 1000];
+    private const array AUTH_VIEWPORT = ['width' => 1440, 'height' => 1000];
 
     public function __construct(
         private ?RunObserver $observer = null,

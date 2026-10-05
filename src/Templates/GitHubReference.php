@@ -16,10 +16,12 @@ use Awcodes\Focus\Exceptions\FocusException;
  *
  * In the URL form the first segment after `tree/` is the ref, so a ref containing `/` needs the shorthand form,
  * where the ref comes last.
+ *
+ * @internal
  */
 final readonly class GitHubReference
 {
-    private const NAME = '[A-Za-z0-9_.-]+';
+    private const string NAME = '[A-Za-z0-9_.-]+';
 
     public function __construct(
         public string $owner,

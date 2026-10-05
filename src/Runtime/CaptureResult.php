@@ -7,6 +7,9 @@ namespace Awcodes\Focus\Runtime;
 use Awcodes\Focus\Capture;
 use Awcodes\Focus\Exceptions\CaptureException;
 
+/**
+ * @internal
+ */
 final readonly class CaptureResult
 {
     /**

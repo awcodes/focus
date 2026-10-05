@@ -6,6 +6,9 @@ namespace Awcodes\Focus\Templates;
 
 use Awcodes\Focus\Support\TemplateDirectory;
 
+/**
+ * @internal
+ */
 final readonly class ResolvedTemplates
 {
     /**

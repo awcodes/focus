@@ -6,6 +6,9 @@ namespace Awcodes\Focus\Templates;
 
 use Awcodes\Focus\Exceptions\FocusException;
 
+/**
+ * @internal
+ */
 final class HttpArchiveDownloader implements ArchiveDownloader
 {
     public function download(GitHubReference $reference, string $commit, ?string $token, string $destination): void

@@ -23,12 +23,14 @@ use Throwable;
 /**
  * Renders a card: serves the template directory from a virtual origin, fills its `data-focus` elements, and captures
  * the viewport. The browser never reaches the network or the file system directly; every request is routed here.
+ *
+ * @internal
  */
 final readonly class CardRenderer
 {
-    public const ORIGIN = 'http://focus.localhost';
+    public const string ORIGIN = 'http://focus.localhost';
 
-    public const CONTENT_TYPES = [
+    public const array CONTENT_TYPES = [
         'html' => 'text/html; charset=utf-8',
         'htm' => 'text/html; charset=utf-8',
         'css' => 'text/css; charset=utf-8',
@@ -52,7 +54,7 @@ final readonly class CardRenderer
         'otf' => 'font/otf',
     ];
 
-    private const SCREENSHOT_PATH = '/__focus/screenshots/';
+    private const string SCREENSHOT_PATH = '/__focus/screenshots/';
 
     public function __construct(
         private TemplateDirectory $templates,

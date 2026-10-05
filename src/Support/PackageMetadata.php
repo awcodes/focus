@@ -9,6 +9,8 @@ use JsonException;
 
 /**
  * Card defaults from the repository's composer.json. Read locally so cards render offline and identically every run.
+ *
+ * @internal
  */
 final readonly class PackageMetadata
 {

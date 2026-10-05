@@ -30,6 +30,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(name: 'run', description: 'Generate the screenshots and cards defined in focus.php')]
+/**
+ * @internal
+ */
 final class RunCommand extends Command
 {
     public function __construct(

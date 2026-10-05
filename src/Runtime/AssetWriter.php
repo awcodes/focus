@@ -11,6 +11,8 @@ use Closure;
 /**
  * Writes a capture to a temporary file beside its destination and renames it into place only on success,
  * so a failed capture never replaces (or appears to refresh) an existing asset.
+ *
+ * @internal
  */
 final class AssetWriter
 {

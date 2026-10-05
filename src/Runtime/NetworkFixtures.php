@@ -11,6 +11,8 @@ use Throwable;
 
 /**
  * Answers a capture's remote requests from local files, and reports the remote requests nothing answered.
+ *
+ * @internal
  */
 final class NetworkFixtures
 {

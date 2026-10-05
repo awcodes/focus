@@ -6,6 +6,9 @@ namespace Awcodes\Focus\Templates;
 
 use Awcodes\Focus\Exceptions\FocusException;
 
+/**
+ * @internal
+ */
 interface GitRemote
 {
     /**

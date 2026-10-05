@@ -8,9 +8,12 @@ use Awcodes\Focus\Exceptions\InvalidManifestException;
 use Awcodes\Focus\ScreenshotSuite;
 use Throwable;
 
+/**
+ * @internal
+ */
 final readonly class ManifestLoader
 {
-    public const DEFAULT_PATH = 'focus.php';
+    public const string DEFAULT_PATH = 'focus.php';
 
     public function __construct(
         private ManifestValidator $validator = new ManifestValidator,

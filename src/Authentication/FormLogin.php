@@ -14,14 +14,16 @@ use Playwright\Page\PageInterface;
 
 /**
  * Signs in through the application's normal login form. Defaults follow the awcodes Workbench standard.
+ *
+ * @internal
  */
 final readonly class FormLogin implements Authenticator
 {
-    public const EMAIL = 'test@example.com';
+    public const string EMAIL = 'test@example.com';
 
-    public const PASSWORD = 'password';
+    public const string PASSWORD = 'password';
 
-    public const PATH = '/admin/login';
+    public const string PATH = '/admin/login';
 
     public function __construct(
         public string $email = self::EMAIL,

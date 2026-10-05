@@ -7,6 +7,9 @@ namespace Awcodes\Focus\Steps;
 use Closure;
 use Playwright\Page\PageInterface;
 
+/**
+ * @internal
+ */
 final readonly class Callback implements Step
 {
     /**

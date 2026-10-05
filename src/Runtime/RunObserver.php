@@ -7,6 +7,9 @@ namespace Awcodes\Focus\Runtime;
 use Awcodes\Focus\Capture;
 use Awcodes\Focus\CardRender;
 
+/**
+ * @internal
+ */
 interface RunObserver
 {
     public function captureStarting(Capture $capture): void;

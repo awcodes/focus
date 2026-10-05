@@ -16,6 +16,8 @@ use Throwable;
 /**
  * Turns the configured card template source into a local directory: a path is used as-is, and a GitHub reference is
  * downloaded once per commit into a cache, so tags and SHAs cost nothing after the first run.
+ *
+ * @internal
  */
 final readonly class TemplateSources
 {

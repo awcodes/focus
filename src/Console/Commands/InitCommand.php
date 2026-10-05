@@ -17,9 +17,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Process\Process;
 
 #[AsCommand(name: 'init', description: 'Scaffold focus.php, the composer script, and Playwright browsers')]
+/**
+ * @internal
+ */
 final class InitCommand extends Command
 {
-    public const COMPOSER_SCRIPT = ['Composer\\Config::disableProcessTimeout', 'focus'];
+    public const array COMPOSER_SCRIPT = ['Composer\\Config::disableProcessTimeout', 'focus'];
 
     public function __construct(
         private readonly string $workingDirectory,

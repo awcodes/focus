@@ -6,6 +6,8 @@ namespace Awcodes\Focus\Runtime;
 
 /**
  * Requests a card template made that could not be served, reported as warnings.
+ *
+ * @internal
  */
 final class RequestLog
 {

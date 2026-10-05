@@ -8,6 +8,9 @@ use Awcodes\Focus\Exceptions\FocusException;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
+/**
+ * @internal
+ */
 final class ProcessGitRemote implements GitRemote
 {
     public function lsRemote(string $url, array $patterns, ?string $token): array

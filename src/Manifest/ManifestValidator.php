@@ -13,9 +13,12 @@ use Awcodes\Focus\Screenshot;
 use Awcodes\Focus\ScreenshotSuite;
 use Awcodes\Focus\Templates\GitHubReference;
 
+/**
+ * @internal
+ */
 final class ManifestValidator
 {
-    public const NAME_PATTERN = '/^[a-z0-9]+(-[a-z0-9]+)*$/';
+    public const string NAME_PATTERN = '/^[a-z0-9]+(-[a-z0-9]+)*$/';
 
     /**
      * @return list<string>
