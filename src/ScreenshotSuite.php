@@ -48,6 +48,12 @@ class ScreenshotSuite
     /** @var list<Closure(PageInterface): mixed> */
     protected array $beforeEach = [];
 
+    /** @var list<Fixture> */
+    protected array $fixtures = [];
+
+    /** @var list<string> */
+    protected array $allowedRemote = [];
+
     final public function __construct()
     {
         $this->authenticator = new FormLogin;
@@ -218,6 +224,31 @@ class ScreenshotSuite
     }
 
     /**
+     * Answer remote requests matching a URL pattern with a local file, so captures do not depend on the network.
+     * `*` and `**` match any characters, query string included. ui-avatars.com, Filament's default avatar provider,
+     * is answered locally without a fixture; a fixture for it here takes precedence.
+     *
+     * @param  string|Closure(string): string  $file  a path relative to the repository root unless absolute, or a
+     *                                                closure that receives the request URL and returns one
+     */
+    public function fixture(string $url, string | Closure $file): static
+    {
+        $this->fixtures[] = new Fixture($url, $file);
+
+        return $this;
+    }
+
+    /**
+     * Let remote requests matching these URL patterns load from the network without a warning.
+     */
+    public function allowRemote(string ...$urls): static
+    {
+        array_push($this->allowedRemote, ...$urls);
+
+        return $this;
+    }
+
+    /**
      * @return list<Screenshot>
      */
     public function getScreenshots(): array
@@ -312,6 +343,22 @@ class ScreenshotSuite
     }
 
     /**
+     * @return list<Fixture>
+     */
+    public function getFixtures(): array
+    {
+        return $this->fixtures;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedRemote(): array
+    {
+        return $this->allowedRemote;
+    }
+
+    /**
      * Resolve every screenshot × theme into a capture, applying CLI filters. Filters only narrow what the manifest defines.
      *
      * @param  list<string>  $only
@@ -333,7 +380,7 @@ class ScreenshotSuite
                     continue;
                 }
 
-                $captures[] = Capture::resolve($this, $screenshot, $screenshotTheme, $this->resolveOutputDirectory($rootPath));
+                $captures[] = Capture::resolve($this, $screenshot, $screenshotTheme, $this->resolveOutputDirectory($rootPath), $rootPath);
             }
         }
 

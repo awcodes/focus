@@ -123,7 +123,8 @@ Focus fixes the browser's clock, locale, and timezone, but it cannot control wha
 - Seed known records at known URLs, such as `/admin/pages/1/edit`.
 - Use fixed strings for content that appears in screenshots, or seed Faker with a fixed value.
 - Avoid `now()` in fixtures that render dates; use fixed dates instead.
-- Mask what you cannot fix, such as avatars fetched from external services.
+- Serve remote images, such as avatars from external services, with `fixture()`; see [Remote requests](screenshots/themes-and-stability.md#remote-requests).
+- Mask what you cannot fix.
 
 ## Other Laravel applications
 

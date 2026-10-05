@@ -87,7 +87,7 @@ A finished navigation does not mean a Filament page is ready to photograph. Afte
 - the DOM has stopped changing for several animation frames;
 - all of the above also hold inside same-origin iframes.
 
-Just before capture, Focus switches lazy-loaded images (`loading="lazy"`) to load immediately and waits for them. Images outside the viewport, in a focus region below the fold or on a full page, are captured loaded rather than blank. Remote images, such as Filament's default avatar from `ui-avatars.com`, are loaded too, so they depend on the network; `hide()` them when that matters.
+Just before capture, Focus switches lazy-loaded images (`loading="lazy"`) to load immediately and waits for them. Images outside the viewport, in a focus region below the fold or on a full page, are captured loaded rather than blank. Remote images are loaded too. Focus answers Filament's default avatar from `ui-avatars.com` locally; serve other remote images with a fixture so they do not depend on the network. See [Remote requests](themes-and-stability.md#remote-requests).
 
 None of this is Filament-specific, so it works for any Laravel application. If a page is still changing after ten seconds, for example because of polling, Focus prints a warning and captures anyway. Add a `waitFor()` or `ready()` step if the result is incomplete.
 
@@ -109,10 +109,10 @@ use Playwright\Page\PageInterface;
 
 ## Masking dynamic content
 
-Timestamps, avatars, counters, and other content your fixtures cannot fully control make screenshots change on every run. Cover them with a solid block at capture time:
+Timestamps, counters, and other content your fixtures cannot fully control make screenshots change on every run. Cover them with a solid block at capture time:
 
 ```php
-->mask('[data-focus-mask]', '.user-avatar')
+->mask('[data-focus-mask]', '.last-synced-at')
 ->maskColor('#E5E7EB')
 ```
 
@@ -120,10 +120,10 @@ Timestamps, avatars, counters, and other content your fixtures cannot fully cont
 
 ## Hiding elements
 
-Sometimes the problem is not changing content but neighbouring UI: form buttons just below a focused editor, or a remote avatar in the top bar. Hide it at capture time:
+Sometimes the problem is not changing content but neighbouring UI, such as form buttons just below a focused editor. Hide it at capture time:
 
 ```php
-->hide('.fi-user-avatar')
+->hide('.fi-form-actions')
 ```
 
 Hidden elements keep their space, because Focus applies `visibility: hidden` rather than removing them, so the layout and the framing do not move. `hide()` accepts one or more selectors and works at suite and screenshot level; the two sets are combined. The styles are removed again right after the capture. Like masks, `hide()` applies to the top-level document only.

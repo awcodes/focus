@@ -50,6 +50,10 @@ return ScreenshotSuite::make()
 
 A `before()`, `beforeCapture()`, `after()`, `beforeEach()`, `ready()`, or custom step threw an exception. The message is the exception's own message.
 
+## Fixture failed
+
+A `fixture()` file does not exist, or a fixture closure threw. The message names the request and the path Focus looked for. Paths are relative to the repository root unless absolute. Focus fails the capture rather than writing an image with a broken remote asset.
+
 ## Browser error
 
 Playwright or Chromium failed.
@@ -95,7 +99,8 @@ Warnings do not fail a capture, but they are worth reading:
 
 - **"The page was still changing … captured anyway"**: something kept changing the page, such as polling or a looping animation with `allowAnimations()`. Add a `waitFor()` or `ready()` step for the state you want.
 - **"The subject or the minimum size is larger than the document"**: the subject or `minSize()` is bigger than the page, so the capture is smaller than requested.
-- **"Images were still loading … before capture"**: an image, often a remote one such as an avatar, did not finish loading within ten seconds. `hide()` or `mask()` it, or check the network.
+- **"Images were still loading … before capture"**: an image, often a remote one, did not finish loading within ten seconds. Serve it with `fixture()`, or check the network.
+- **"Loaded … over the network"**: the page loaded a remote URL that no fixture answered, so the capture can change between runs. Serve it with `fixture()`, or accept it with `allowRemote()`. See [Remote requests](screenshots/themes-and-stability.md#remote-requests).
 - **"Every theme produced an identical image"**: the page has no dark mode. Restrict it with `->themes([Theme::Light])`.
 - **"The template was cropped to fit …"**: the card's aspect ratio differs from the template's canvas. Keep content away from the named edges, or use a template designed for that ratio; see [Fixed canvases](cards/templates.md#fixed-canvases).
 - **"content overflows"**: the template is larger than its canvas or card, usually because of a long title or description.
@@ -108,7 +113,8 @@ Warnings do not fail a capture, but they are worth reading:
 
 - **Unstyled or outdated UI**: the Workbench's published assets are stale. Run `composer build` in the package repository after pulling changes.
 - **Content changes on every run**: fixtures use random Faker data or `now()`. Make them deterministic, or `mask()` the affected elements. See [Workbench integration](workbench.md#deterministic-fixtures).
-- **A broken or missing avatar in the top bar**: Filament's default avatar is loaded from `ui-avatars.com`, so it needs the network. `hide('.fi-user-avatar')` keeps screenshots independent of it.
+- **A broken or missing avatar in the top bar**: Focus answers Filament's default `ui-avatars.com` avatar locally. A custom avatar provider loads from somewhere else; serve it with `fixture()`.
 - **Tooltips, hover styles, or focus rings**: Focus clears these before capture unless the last pointer step is a `hover()` or the screenshot uses `keepInteractionState()`. Anything set in a `beforeCapture()` callback is kept.
 - **Wrong theme inside an embedded preview**: the iframe controls its own colour scheme. The browser reports the requested theme, but the embedded document decides how to render it.
 - **Small differences between machines**: font rendering differs across operating systems. Regenerate from one consistent environment; see [Themes and rendering stability](screenshots/themes-and-stability.md#cross-platform-differences).
+- **Small differences between runs on one machine**: often a page styled with the system font. See [System fonts](screenshots/themes-and-stability.md#system-fonts).

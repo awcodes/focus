@@ -80,6 +80,8 @@ These settings are suite-level only:
 | `reuseSession(bool)` | Reuse the previous run's signed-in session with `login()` | `true` |
 | `timeout(int)` | Timeout in milliseconds for interactions and selectors | `15000` |
 | `beforeEach(Closure)` | Callback before every screenshot | — |
+| `fixture(string, string\|Closure)` | Answer remote requests matching a URL pattern with a local file (see [Remote requests](screenshots/themes-and-stability.md#remote-requests)) | `ui-avatars.com` answered locally |
+| `allowRemote(...)` | URL patterns that may load from the network without a warning | none |
 | `cards([...])` | Share images to render (see [Cards](cards/overview.md)) | none |
 | `cardTemplates(string)` | Card template directory: a path or a GitHub reference | required with `cards()` |
 | `cardOutputPath(string)` | Where cards are written | `art` |
