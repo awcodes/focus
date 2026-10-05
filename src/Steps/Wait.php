@@ -6,6 +6,9 @@ namespace Awcodes\Focus\Steps;
 
 use Playwright\Page\PageInterface;
 
+/**
+ * @internal
+ */
 final readonly class Wait implements Step
 {
     public function __construct(

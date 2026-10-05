@@ -7,6 +7,9 @@ namespace Awcodes\Focus\Steps;
 use Awcodes\Focus\Runtime\Elements;
 use Playwright\Page\PageInterface;
 
+/**
+ * @internal
+ */
 final readonly class Fill implements Step
 {
     public function __construct(

@@ -8,6 +8,9 @@ use Awcodes\Focus\Enums\FailureReason;
 use Awcodes\Focus\Exceptions\CaptureException;
 use Playwright\Page\PageInterface;
 
+/**
+ * @internal
+ */
 final readonly class Visit implements Step
 {
     public function __construct(

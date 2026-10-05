@@ -7,6 +7,9 @@ namespace Awcodes\Focus\Authentication;
 use Closure;
 use Playwright\Page\PageInterface;
 
+/**
+ * @internal
+ */
 final readonly class CallbackAuthenticator implements Authenticator
 {
     /**

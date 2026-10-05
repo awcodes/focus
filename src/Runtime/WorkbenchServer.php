@@ -10,6 +10,8 @@ use Symfony\Component\Process\Process;
 
 /**
  * Starts `testbench serve` on a free local port, or verifies an existing server, and stops only what it started.
+ *
+ * @internal
  */
 final readonly class WorkbenchServer
 {

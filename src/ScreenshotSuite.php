@@ -361,6 +361,8 @@ class ScreenshotSuite
     /**
      * Resolve every screenshot × theme into a capture, applying CLI filters. Filters only narrow what the manifest defines.
      *
+     * @internal
+     *
      * @param  list<string>  $only
      * @return list<Capture>
      */
@@ -389,6 +391,8 @@ class ScreenshotSuite
 
     /**
      * Resolve every card × theme × size into a render, applying CLI filters. Filters only narrow what the manifest defines.
+     *
+     * @internal
      *
      * @param  list<string>  $only
      * @return list<CardRender>
@@ -427,11 +431,17 @@ class ScreenshotSuite
         return $renders;
     }
 
+    /**
+     * @internal
+     */
     public function resolveOutputDirectory(string $rootPath): string
     {
         return $this->resolvePath($rootPath, $this->getOutputPath());
     }
 
+    /**
+     * @internal
+     */
     public function resolveCardOutputDirectory(string $rootPath): string
     {
         return $this->resolvePath($rootPath, $this->getCardOutputPath());

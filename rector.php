@@ -16,7 +16,7 @@ try {
             privatization: true,
             earlyReturn: true,
         )
-        ->withPhpSets(php82: true);
+        ->withPhpSets(php83: true);
 } catch (Rector\Exception\Configuration\InvalidConfigurationException $e) {
     echo 'Error: ' . $e->getMessage() . PHP_EOL;
     exit(1);

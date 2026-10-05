@@ -7,12 +7,14 @@ namespace Awcodes\Focus\Runtime;
 /**
  * A local stand-in for ui-avatars.com, Filament's default avatar provider. It draws the same initials on the same
  * background the URL asks for, so top-bar captures keep a realistic avatar without reaching the network.
+ *
+ * @internal
  */
 final class UiAvatars
 {
-    public const URL = 'https://ui-avatars.com/**';
+    public const string URL = 'https://ui-avatars.com/**';
 
-    private const SIZE = 64;
+    private const int SIZE = 64;
 
     public static function svg(string $url): string
     {

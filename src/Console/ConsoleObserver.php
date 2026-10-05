@@ -13,6 +13,9 @@ use Awcodes\Focus\Runtime\RunObserver;
 use Closure;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * @internal
+ */
 final readonly class ConsoleObserver implements RunObserver
 {
     /**

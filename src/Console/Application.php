@@ -9,6 +9,9 @@ use Awcodes\Focus\Console\Commands\RunCommand;
 use Composer\InstalledVersions;
 use Symfony\Component\Console\Application as SymfonyApplication;
 
+/**
+ * @internal
+ */
 final class Application extends SymfonyApplication
 {
     public function __construct(?string $workingDirectory = null)

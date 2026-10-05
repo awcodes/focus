@@ -11,6 +11,8 @@ use Awcodes\Focus\Enums\Theme;
 /**
  * Finds files in an output directory that follow Focus's filename scheme but were not produced by the manifest.
  * Matching is pattern-based, so files that do not end in `-{theme}.png` are never considered.
+ *
+ * @internal
  */
 final class Orphans
 {

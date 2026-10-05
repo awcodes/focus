@@ -11,9 +11,37 @@ description: Install Focus, its Playwright browser, and the composer focus scrip
 |------------------|-----------------|
 | 4.x & 5.x        | 1.x             |
 
-Focus requires PHP 8.2 or later and Node.js 20 or later. It does not depend on Filament itself: it drives whatever application your Workbench serves, and targets Filament v4 and v5 Workbenches.
+Focus requires PHP 8.3 or later and Node.js 20 or later. It does not depend on Filament itself: it drives whatever application your Workbench serves, and targets Filament v4 and v5 Workbenches.
 
 Focus uses [Playwright](https://playwright.dev) through the `playwright-php/playwright` package and captures with Chromium.
+
+## Versioning
+
+From 1.0, Focus follows [semantic versioning](https://semver.org). A breaking change to the public API or to the images a manifest produces needs a new major version.
+
+### The public API
+
+These are the stable parts of Focus:
+
+- **The manifest classes:** `ScreenshotSuite`, `Screenshot` and `Card`, and their documented methods.
+- **The enums:** `Theme`, `Viewport`, `Size`, `CaptureMode` and `FailureReason`.
+- **The contracts:** `Steps\Step` for custom steps, `Authentication\Authenticator` for custom sign-in, and `Contracts\HasDimensions`.
+- **The exceptions:** `CaptureException`, `FocusException` and `InvalidManifestException`.
+- **The CLI:** the commands, their options, and their exit codes.
+- **The output file names:** `{name}-{theme}.png` and `{name}-{size}-{theme}.png`.
+- **The card template contract:** the `data-focus` keys, the `--focus-screenshot-N` CSS variables, and the `focus:canvas` meta tag.
+
+Classes and methods marked `@internal` can change in any release.
+
+### Defaults
+
+A default that changes the pixels of an existing manifest's output counts as a breaking change. Examples are the viewport, scale, padding, frozen time and theme handling. New options, new warnings and new defaults for new options can arrive in minor releases.
+
+### Playwright
+
+Callbacks, custom steps and authenticators receive playwright-php's `Playwright\Page\PageInterface`. Focus requires playwright-php `^1.5`, so a new major version of playwright-php means a new major version of Focus.
+
+Focus doesn't pin the Chromium version yet. Chromium comes from `vendor/bin/playwright-install`, and an update can change pixels without any change in Focus. The same is true of your operating system's fonts. Generate a repository's images on one machine, and regenerate them all after a browser or OS update. See [Cross-platform differences](screenshots/themes-and-stability.md#cross-platform-differences).
 
 ## Requiring the package
 

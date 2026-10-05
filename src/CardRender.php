@@ -13,6 +13,8 @@ use DateTimeImmutable;
 
 /**
  * One card at one size in one theme, with every setting and value resolved.
+ *
+ * @internal
  */
 final readonly class CardRender
 {

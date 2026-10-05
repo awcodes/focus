@@ -8,6 +8,9 @@ use Playwright\Exception\PlaywrightExceptionInterface;
 use Playwright\Exception\TimeoutException;
 use Throwable;
 
+/**
+ * @internal
+ */
 final class Timeouts
 {
     /**

@@ -13,6 +13,8 @@ use DateTimeZone;
 
 /**
  * One screenshot in one theme, with every setting resolved screenshot → suite → package default.
+ *
+ * @internal
  */
 final readonly class Capture
 {

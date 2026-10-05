@@ -8,6 +8,8 @@ use Awcodes\Focus\Exceptions\FocusException;
 
 /**
  * A local directory of built card templates, such as an Astro `dist/`.
+ *
+ * @internal
  */
 final readonly class TemplateDirectory
 {

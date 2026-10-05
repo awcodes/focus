@@ -8,6 +8,8 @@ use Awcodes\Focus\Exceptions\FocusException;
 
 /**
  * Reads a template's fixed design size from `<meta name="focus:canvas" content="2560x1440">`.
+ *
+ * @internal
  */
 final class TemplateCanvas
 {

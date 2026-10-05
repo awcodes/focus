@@ -8,6 +8,8 @@ use Closure;
 
 /**
  * A local file served in place of a remote request, so captures never depend on the network.
+ *
+ * @internal
  */
 final readonly class Fixture
 {
