@@ -1,7 +1,5 @@
 # Focus
 
-![Focus: documentation screenshots generated from your Workbench](https://raw.githubusercontent.com/awcodes/focus/main/art/focus-social.png)
-
 Generate consistent, deterministic documentation screenshots from a package's Laravel Workbench application.
 
 Describe the UI states worth showing in a `focus.php` manifest, and Focus drives the Workbench with Playwright to produce light and dark PNGs for your documentation. `focus()` frames a subject intelligently: pass a selector for what matters, and Focus adds padding, grows small subjects to a useful size, and keeps the capture inside the page.

@@ -51,6 +51,10 @@
     "scripts": {
         "lint": "pint",
         "refactor": "rector",
+        "focus": [
+            "Composer\\Config::disableProcessTimeout",
+            "bin/focus"
+        ],
         "test:lint": "pint --test",
         "test:refactor": "rector --dry-run",
         "test:types": "phpstan analyse",
