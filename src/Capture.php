@@ -19,6 +19,8 @@ final readonly class Capture
     /**
      * @param  list<string>  $masks
      * @param  list<string>  $hidden
+     * @param  list<Fixture>  $fixtures
+     * @param  list<string>  $allowedRemote
      */
     public function __construct(
         public Screenshot $screenshot,
@@ -37,9 +39,11 @@ final readonly class Capture
         public string $maskColor,
         public bool $keepInteractionState,
         public string $path,
+        public array $fixtures = [],
+        public array $allowedRemote = [],
     ) {}
 
-    public static function resolve(ScreenshotSuite $suite, Screenshot $screenshot, Theme $theme, string $outputDirectory): self
+    public static function resolve(ScreenshotSuite $suite, Screenshot $screenshot, Theme $theme, string $outputDirectory, ?string $rootPath = null): self
     {
         $timezone = $screenshot->getTimezone() ?? $suite->getTimezone() ?? Defaults::TIMEZONE;
 
@@ -63,6 +67,11 @@ final readonly class Capture
             maskColor: $screenshot->getMaskColor() ?? $suite->getMaskColor() ?? Defaults::MASK_COLOR,
             keepInteractionState: $screenshot->getKeepInteractionState() ?? $suite->getKeepInteractionState() ?? Defaults::KEEP_INTERACTION_STATE,
             path: $outputDirectory . DIRECTORY_SEPARATOR . self::filename($screenshot->getName(), $theme),
+            fixtures: array_map(
+                fn (Fixture $fixture): Fixture => $rootPath === null ? $fixture : $fixture->withRootPath($rootPath),
+                $suite->getFixtures(),
+            ),
+            allowedRemote: $suite->getAllowedRemote(),
         );
     }
 

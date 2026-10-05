@@ -176,6 +176,29 @@ switch ($path) {
 
         return;
 
+    case '/public/avatars':
+        // Remote images: ui-avatars.com and gravatar.com are answered by fixtures; the localhost image is another
+        // origin served by this same server, so it loads over the network and should be reported.
+        $layout(<<<'HTML'
+            <img id="ui" src="https://ui-avatars.com/api/?name=T+U&format=svg&color=FFFFFF&background=%23ff0000" width="64" height="64" style="position: absolute; left: 0; top: 0" alt="">
+            <img id="gravatar" src="https://www.gravatar.com/avatar/abc?s=64&d=mp" width="64" height="64" style="position: absolute; left: 100px; top: 0" alt="">
+            <img id="remote" width="64" height="64" style="position: absolute; left: 200px; top: 0" alt="">
+            <script>
+                const url = new URL('/img/green', location.href);
+                url.hostname = 'localhost';
+                document.getElementById('remote').src = url.href;
+            </script>
+            HTML);
+
+        return;
+
+    case '/img/green':
+        header('Content-Type: image/png');
+        // A 1x1 green PNG.
+        echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEBgIApD5fRAAAAABJRU5ErkJggg==');
+
+        return;
+
     case '/public':
         $layout('<h1>Public</h1><div class="card" data-focus="card">Public card</div>');
 

@@ -36,6 +36,22 @@ final class ManifestValidator
             $errors[] = 'outputPath() must not be empty.';
         }
 
+        foreach ($suite->getFixtures() as $fixture) {
+            if (preg_match('#^https?://[^/*]+#i', $fixture->url) !== 1) {
+                $errors[] = "fixture() needs an absolute http(s) URL pattern with a host, such as https://example.com/**, [{$fixture->url}] given.";
+            }
+
+            if (is_string($fixture->file) && trim($fixture->file) === '') {
+                $errors[] = "fixture({$fixture->url}) needs a file.";
+            }
+        }
+
+        foreach ($suite->getAllowedRemote() as $pattern) {
+            if (preg_match('#^https?://#i', $pattern) !== 1) {
+                $errors[] = "allowRemote() needs absolute http(s) URL patterns, [{$pattern}] given.";
+            }
+        }
+
         $seen = [];
 
         foreach ($suite->getScreenshots() as $screenshot) {

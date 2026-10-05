@@ -234,6 +234,9 @@ final readonly class Runner
             $this->configureTimeouts($context, $suite->getTimeout());
             $context->addInitScript(Scripts::init($capture->theme, $capture->animations));
 
+            $fixtures = new NetworkFixtures($capture->fixtures, $capture->allowedRemote);
+            $fixtures->install($context);
+
             if ($capture->frozenTime instanceof DateTimeImmutable) {
                 $context->clock()->setFixedTime($capture->frozenTime);
             }
@@ -255,8 +258,16 @@ final readonly class Runner
             $page->evaluate(Scripts::eagerImages());
 
             if (! $this->settle($page)) {
-                $warnings[] = "Images were still loading {$this->seconds(self::READY_TIMEOUT)}s before capture; captured anyway. A remote image, such as an avatar, may be slow or unreachable; hide() or mask() it.";
+                $warnings[] = "Images were still loading {$this->seconds(self::READY_TIMEOUT)}s before capture; captured anyway. A remote image may be slow or unreachable; serve it with fixture().";
             }
+
+            if ($errors = $fixtures->errors()) {
+                throw new CaptureException(FailureReason::Fixture, implode(' ', $errors));
+            }
+
+            /** @var list<string> $remote */
+            $remote = $page->evaluate(Scripts::remoteRequests(), NetworkFixtures::origin($baseUrl));
+            array_push($warnings, ...$fixtures->warnings($remote));
 
             if (! $capture->keepInteractionState) {
                 $this->resetInteractionState($page, $capture);

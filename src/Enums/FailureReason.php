@@ -14,6 +14,7 @@ enum FailureReason: string
     case SelectorHidden = 'Selector hidden';
     case Timeout = 'Timed out';
     case Callback = 'Callback failed';
+    case Fixture = 'Fixture failed';
     case Template = 'Template error';
     case Dependency = 'Screenshot failed';
     case Output = 'Could not write output';

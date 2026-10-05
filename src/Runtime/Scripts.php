@@ -50,7 +50,7 @@ final class Scripts
 
                 // Track in-flight requests and DOM activity so readiness can wait for the UI to settle.
                 // Quiet time is counted in animation frames, not clock time, because the clock may be frozen.
-                const state = window.__focus = { pending: 0, frames: 0, alpine: false };
+                const state = window.__focus = { pending: 0, frames: 0, alpine: false, resources: [] };
                 const touch = () => { state.frames = 0; };
 
                 if (window.fetch) {
@@ -73,6 +73,14 @@ final class Scripts
                 }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
 
                 document.addEventListener('alpine:initialized', () => { state.alpine = true; });
+
+                // Record every resource the frame loads, for the remote request report. An observer rather than
+                // performance.getEntriesByType(), because a frozen clock replaces window.performance with a fake.
+                try {
+                    new PerformanceObserver((list) => {
+                        for (const entry of list.getEntries()) state.resources.push(entry.name);
+                    }).observe({ type: 'resource', buffered: true });
+                } catch (e) {}
 
                 const tick = () => { state.frames++; requestAnimationFrame(tick); };
                 requestAnimationFrame(tick);
@@ -239,6 +247,50 @@ final class Scripts
                 };
 
                 blur(document);
+            }
+            JS;
+    }
+
+    /**
+     * Every http(s) URL the page and its same-origin iframes loaded from another origin, as recorded by `init()`,
+     * including the src of cross-origin iframes, whose own requests cannot be seen.
+     */
+    public static function remoteRequests(): string
+    {
+        return <<<'JS'
+            (origin) => {
+                const urls = new Set();
+                const remote = (url) => {
+                    try {
+                        const parsed = new URL(url, location.href);
+                        return /^https?:$/.test(parsed.protocol) && parsed.origin !== origin ? parsed.href : null;
+                    } catch (e) {
+                        return null;
+                    }
+                };
+
+                const collect = (win) => {
+                    for (const name of (win.__focus && win.__focus.resources) || []) {
+                        const url = remote(name);
+                        if (url) urls.add(url);
+                    }
+
+                    for (const frame of win.document.querySelectorAll('iframe')) {
+                        let child = null;
+                        try { child = frame.contentWindow && frame.contentWindow.document ? frame.contentWindow : null; } catch (e) {}
+
+                        if (child) {
+                            collect(child);
+                        } else {
+                            const url = remote(frame.src);
+                            if (url) urls.add(url);
+                        }
+                    }
+                };
+
+                collect(window);
+
+                return [...urls];
             }
             JS;
     }

@@ -28,9 +28,7 @@ final readonly class CardRenderer
 {
     public const ORIGIN = 'http://focus.localhost';
 
-    private const SCREENSHOT_PATH = '/__focus/screenshots/';
-
-    private const CONTENT_TYPES = [
+    public const CONTENT_TYPES = [
         'html' => 'text/html; charset=utf-8',
         'htm' => 'text/html; charset=utf-8',
         'css' => 'text/css; charset=utf-8',
@@ -53,6 +51,8 @@ final readonly class CardRenderer
         'ttf' => 'font/ttf',
         'otf' => 'font/otf',
     ];
+
+    private const SCREENSHOT_PATH = '/__focus/screenshots/';
 
     public function __construct(
         private TemplateDirectory $templates,

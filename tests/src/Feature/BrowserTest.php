@@ -402,3 +402,58 @@ it('hides elements at capture time without moving the layout', function (): void
         ->and(pixel("{$root}/docs/assets/hidden-light.png", 0, 50))->toBe([255, 255, 255])
         ->and($styleRemoved)->toBeTrue();
 });
+
+/**
+ * A solid-colour PNG fixture in a temporary directory.
+ *
+ * @param  array{int, int, int}  $rgb
+ */
+function colorFixture(array $rgb): string
+{
+    $path = tempDirectory() . '/fixture.png';
+    $image = imagecreatetruecolor(8, 8);
+    imagefill($image, 0, 0, imagecolorallocate($image, ...$rgb));
+    imagepng($image, $path);
+
+    return $path;
+}
+
+it('answers remote requests from fixtures and the built-in ui-avatars.com stand-in', function (): void {
+    $blue = colorFixture([0, 0, 255]);
+
+    [$results, $root] = capture(
+        [Screenshot::make('avatars')->visit('/public/avatars')->scale(1)->themes([Theme::Light])],
+        fn (ScreenshotSuite $suite) => $suite->withoutLogin()->fixture('https://www.gravatar.com/avatar/**', $blue),
+    );
+
+    $path = "{$root}/docs/assets/avatars-light.png";
+
+    expect(errors($results))->toBe([null])
+        ->and(pixel($path, 2, 2))->toBe([255, 0, 0])
+        ->and(pixel($path, 102, 2))->toBe([0, 0, 255]);
+});
+
+it('warns about remote requests that loaded over the network, unless allowed', function (): void {
+    $screenshot = fn () => Screenshot::make('avatars')->visit('/public/avatars')->scale(1)->themes([Theme::Light]);
+    $origin = 'http://localhost:' . parse_url(fixtureServer(), PHP_URL_PORT);
+
+    [$warned] = capture([$screenshot()], fn (ScreenshotSuite $suite) => $suite->withoutLogin());
+    [$allowed] = capture([$screenshot()], fn (ScreenshotSuite $suite) => $suite->withoutLogin()->allowRemote("{$origin}/**"));
+
+    expect(implode(' ', $warned[0]->warnings))
+        ->toContain("Loaded {$origin}/img/green from {$origin} over the network")
+        ->toContain('https://www.gravatar.com')
+        ->not->toContain('ui-avatars.com')
+        ->and(implode(' ', $allowed[0]->warnings))->not->toContain($origin);
+});
+
+it('fails a capture whose fixture file is missing', function (): void {
+    [$results, $root] = capture(
+        [Screenshot::make('avatars')->visit('/public/avatars')->themes([Theme::Light])],
+        fn (ScreenshotSuite $suite) => $suite->withoutLogin()->fixture('https://www.gravatar.com/avatar/**', '/nowhere/avatar.png'),
+    );
+
+    expect($results[0]->error?->reason)->toBe(FailureReason::Fixture)
+        ->and($results[0]->error?->getMessage())->toContain('/nowhere/avatar.png')
+        ->and(file_exists("{$root}/docs/assets/avatars-light.png"))->toBeFalse();
+});
