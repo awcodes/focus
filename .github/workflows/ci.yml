@@ -15,6 +15,9 @@ on:
       - "rector.php"
       - "pint.json"
       - ".github/workflows/**"
+      # The ruleset requires `All Checks`, so a change that runs no CI cannot
+      # merge without an admin override. A Dependabot config change is one.
+      - ".github/dependabot.yml"
   pull_request:
     branches:
       - 1.x
@@ -29,6 +32,9 @@ on:
       - "rector.php"
       - "pint.json"
       - ".github/workflows/**"
+      # The ruleset requires `All Checks`, so a change that runs no CI cannot
+      # merge without an admin override. A Dependabot config change is one.
+      - ".github/dependabot.yml"
 
 jobs:
   ci:
